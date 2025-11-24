@@ -16,6 +16,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const sidebarLinks = [
     {
@@ -40,7 +41,7 @@ const sidebarLinks = [
     },
 ];
 
-export function Sidebar({ userEmail }: { userEmail?: string }) {
+export function Sidebar({ userEmail, userName }: { userEmail?: string; userName?: string | null }) {
     const pathname = usePathname();
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
@@ -81,21 +82,21 @@ export function Sidebar({ userEmail }: { userEmail?: string }) {
                         animate={{ x: 0 }}
                         exit={{ x: -300 }}
                         className={cn(
-                            "fixed inset-y-0 left-0 z-40 w-64 bg-black border-r border-white/10 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0",
+                            "fixed inset-y-0 left-0 z-40 w-64 bg-card border-r border-border flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0",
                             isMobileOpen ? "translate-x-0" : "-translate-x-full"
                         )}
                     >
                         {/* Header */}
-                        <div className="h-16 flex items-center justify-between px-6 border-b border-white/10">
+                        <div className="h-16 flex items-center justify-between px-6 border-b border-border">
                             <Link href="/dashboard" className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
                                     <Search className="w-4 h-4 text-primary" />
                                 </div>
-                                <span className="text-xl font-bold text-white">HUNTER</span>
+                                <span className="text-xl font-bold text-foreground">HUNTER</span>
                             </Link>
                             <button
                                 onClick={() => setIsMobileOpen(false)}
-                                className="lg:hidden text-zinc-400 hover:text-white"
+                                className="lg:hidden text-muted-foreground hover:text-foreground"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -114,7 +115,7 @@ export function Sidebar({ userEmail }: { userEmail?: string }) {
                                             "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors",
                                             isActive
                                                 ? "bg-primary/10 text-primary border border-primary/20"
-                                                : "text-zinc-400 hover:text-white hover:bg-white/5"
+                                                : "text-muted-foreground hover:text-foreground hover:bg-accent"
                                         )}
                                     >
                                         <link.icon className="w-5 h-5" />
@@ -125,25 +126,29 @@ export function Sidebar({ userEmail }: { userEmail?: string }) {
                         </nav>
 
                         {/* User Profile & Logout */}
-                        <div className="p-4 border-t border-white/10">
+                        <div className="p-4 border-t border-white/10 space-y-2">
                             <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-900/50 border border-white/5 mb-2">
                                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary/50 flex items-center justify-center text-black font-bold text-xs">
-                                    {userEmail?.charAt(0).toUpperCase()}
+                                    {userName ? userName.charAt(0).toUpperCase() : userEmail?.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium text-white truncate">
-                                        {userEmail?.split("@")[0]}
+                                        {userName || userEmail?.split("@")[0]}
                                     </p>
-                                    <p className="text-xs text-zinc-500 truncate">{userEmail}</p>
+                                    <p className="text-xs text-white/70 truncate">{userEmail}</p>
                                 </div>
                             </div>
-                            <button
-                                onClick={handleSignOut}
-                                className="w-full flex items-center gap-3 px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
-                            >
-                                <LogOut className="w-4 h-4" />
-                                Cerrar Sesión
-                            </button>
+
+                            <div className="flex items-center gap-2">
+                                <ThemeToggle />
+                                <button
+                                    onClick={handleSignOut}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                                >
+                                    <LogOut className="w-4 h-4" />
+                                    Cerrar Sesión
+                                </button>
+                            </div>
                         </div>
                     </motion.aside>
                 )}
