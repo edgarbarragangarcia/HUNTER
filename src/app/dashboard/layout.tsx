@@ -21,6 +21,7 @@ export default async function DashboardLayout({
         .from("profiles")
         .select("full_name")
         .eq("user_id", user.id)
+        .limit(1)
         .single();
 
     return (

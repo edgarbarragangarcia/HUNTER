@@ -20,6 +20,11 @@ export default async function SelectProfilePage() {
         .select("*")
         .eq("user_id", user.id);
 
+    // If user has exactly one profile, redirect to dashboard automatically
+    if (profiles && profiles.length === 1) {
+        redirect("/dashboard");
+    }
+
     return (
         <AuthLayout
             title={profiles?.length ? "Selecciona un Perfil" : "Crea tu Perfil"}

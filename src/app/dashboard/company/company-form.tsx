@@ -105,93 +105,95 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="p-8 rounded-2xl card-gradient card-shimmer shadow-glow"
+                                className="p-8 rounded-2xl card-gradient-primary card-shimmer shadow-glow"
                             >
-                                <div className="flex items-center justify-between mb-6">
-                                    <h3 className="text-xl font-semibold text-foreground">Información de la Empresa</h3>
-                                    <button
-                                        onClick={() => setIsEditing(true)}
-                                        className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors"
-                                    >
-                                        <Edit2 className="w-4 h-4" />
-                                        Editar
-                                    </button>
-                                </div>
+                                <div className="border-2 border-dashed border-white/20 rounded-xl p-8">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h3 className="text-xl font-semibold text-foreground">Información de la Empresa</h3>
+                                        <button
+                                            onClick={() => setIsEditing(true)}
+                                            className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors"
+                                        >
+                                            <Edit2 className="w-4 h-4" />
+                                            Editar
+                                        </button>
+                                    </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <p className="text-sm text-muted-foreground">Nombre de la Empresa</p>
-                                        <p className="text-foreground font-medium flex items-center gap-2">
-                                            <Check className="w-4 h-4 text-primary" />
-                                            {company.company_name}
-                                        </p>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <p className="text-sm text-muted-foreground">NIT</p>
-                                        <p className="text-foreground font-medium flex items-center gap-2">
-                                            <Check className="w-4 h-4 text-primary" />
-                                            {company.nit}
-                                        </p>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <p className="text-sm text-muted-foreground">Representante Legal</p>
-                                        <p className="text-foreground font-medium flex items-center gap-2">
-                                            <Check className="w-4 h-4 text-primary" />
-                                            {company.legal_representative}
-                                        </p>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <p className="text-sm text-muted-foreground">Sector Económico</p>
-                                        <p className="text-foreground font-medium flex items-center gap-2">
-                                            <Check className="w-4 h-4 text-primary" />
-                                            {company.economic_sector}
-                                        </p>
-                                    </div>
-                                    {company.phone && (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="space-y-2">
-                                            <p className="text-sm text-muted-foreground">Teléfono</p>
+                                            <p className="text-sm text-muted-foreground">Nombre de la Empresa</p>
                                             <p className="text-foreground font-medium flex items-center gap-2">
                                                 <Check className="w-4 h-4 text-primary" />
-                                                {company.phone}
+                                                {company.company_name}
                                             </p>
                                         </div>
-                                    )}
-                                    {company.country && (
                                         <div className="space-y-2">
-                                            <p className="text-sm text-muted-foreground">País</p>
+                                            <p className="text-sm text-muted-foreground">NIT</p>
                                             <p className="text-foreground font-medium flex items-center gap-2">
                                                 <Check className="w-4 h-4 text-primary" />
-                                                {company.country}
+                                                {company.nit}
                                             </p>
                                         </div>
-                                    )}
-                                    {company.address && (
-                                        <div className="space-y-2 md:col-span-2">
-                                            <p className="text-sm text-muted-foreground">Dirección</p>
-                                            <p className="text-foreground font-medium flex items-center gap-2">
-                                                <Check className="w-4 h-4 text-primary" />
-                                                {company.address}
-                                            </p>
-                                        </div>
-                                    )}
-                                    {company.city && (
                                         <div className="space-y-2">
-                                            <p className="text-sm text-muted-foreground">Ciudad</p>
+                                            <p className="text-sm text-muted-foreground">Representante Legal</p>
                                             <p className="text-foreground font-medium flex items-center gap-2">
                                                 <Check className="w-4 h-4 text-primary" />
-                                                {company.city}
+                                                {company.legal_representative}
                                             </p>
                                         </div>
-                                    )}
-                                    {company.department && (
                                         <div className="space-y-2">
-                                            <p className="text-sm text-muted-foreground">Departamento</p>
+                                            <p className="text-sm text-muted-foreground">Sector Económico</p>
                                             <p className="text-foreground font-medium flex items-center gap-2">
                                                 <Check className="w-4 h-4 text-primary" />
-                                                {company.department}
+                                                {company.economic_sector}
                                             </p>
                                         </div>
-                                    )}
+                                        {company.phone && (
+                                            <div className="space-y-2">
+                                                <p className="text-sm text-muted-foreground">Teléfono</p>
+                                                <p className="text-foreground font-medium flex items-center gap-2">
+                                                    <Check className="w-4 h-4 text-primary" />
+                                                    {company.phone}
+                                                </p>
+                                            </div>
+                                        )}
+                                        {company.country && (
+                                            <div className="space-y-2">
+                                                <p className="text-sm text-muted-foreground">País</p>
+                                                <p className="text-foreground font-medium flex items-center gap-2">
+                                                    <Check className="w-4 h-4 text-primary" />
+                                                    {company.country}
+                                                </p>
+                                            </div>
+                                        )}
+                                        {company.address && (
+                                            <div className="space-y-2 md:col-span-2">
+                                                <p className="text-sm text-muted-foreground">Dirección</p>
+                                                <p className="text-foreground font-medium flex items-center gap-2">
+                                                    <Check className="w-4 h-4 text-primary" />
+                                                    {company.address}
+                                                </p>
+                                            </div>
+                                        )}
+                                        {company.city && (
+                                            <div className="space-y-2">
+                                                <p className="text-sm text-muted-foreground">Ciudad</p>
+                                                <p className="text-foreground font-medium flex items-center gap-2">
+                                                    <Check className="w-4 h-4 text-primary" />
+                                                    {company.city}
+                                                </p>
+                                            </div>
+                                        )}
+                                        {company.department && (
+                                            <div className="space-y-2">
+                                                <p className="text-sm text-muted-foreground">Departamento</p>
+                                                <p className="text-foreground font-medium flex items-center gap-2">
+                                                    <Check className="w-4 h-4 text-primary" />
+                                                    {company.department}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </motion.div>
                         ) : (
@@ -199,141 +201,143 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow"
+                                className="p-6 rounded-2xl card-gradient-primary card-shimmer shadow-glow"
                             >
-                                <div className="flex items-center justify-between mb-6">
-                                    <h3 className="text-xl font-semibold text-foreground">Información General</h3>
-                                    {company && (
+                                <div className="border-2 border-dashed border-white/20 rounded-xl p-8">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h3 className="text-xl font-semibold text-foreground">Información General</h3>
+                                        {company && (
+                                            <button
+                                                onClick={() => setIsEditing(false)}
+                                                className="text-sm text-muted-foreground hover:text-foreground"
+                                            >
+                                                Cancelar
+                                            </button>
+                                        )}
+                                    </div>
+                                    <form action={saveCompanyInfo} className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-400 mb-2">
+                                                    Nombre de la Empresa *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="company_name"
+                                                    defaultValue={company?.company_name}
+                                                    placeholder="Ej. Tech Solutions SAS"
+                                                    required
+                                                    className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-400 mb-2">
+                                                    NIT *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="nit"
+                                                    defaultValue={company?.nit}
+                                                    placeholder="900.123.456-7"
+                                                    required
+                                                    className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-400 mb-2">
+                                                    Representante Legal *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="legal_representative"
+                                                    defaultValue={company?.legal_representative}
+                                                    placeholder="Juan Pérez"
+                                                    required
+                                                    className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-400 mb-2">
+                                                    Sector / Actividad Económica *
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    name="economic_sector"
+                                                    defaultValue={company?.economic_sector}
+                                                    placeholder="Tecnología, Construcción, etc."
+                                                    required
+                                                    className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-400 mb-2">Teléfono</label>
+                                                <input
+                                                    type="tel"
+                                                    name="phone"
+                                                    defaultValue={company?.phone}
+                                                    placeholder="+57 300 123 4567"
+                                                    className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-400 mb-2">País</label>
+                                                <input
+                                                    type="text"
+                                                    name="country"
+                                                    defaultValue={company?.country || "Colombia"}
+                                                    className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-zinc-400 mb-2">Dirección</label>
+                                            <input
+                                                type="text"
+                                                name="address"
+                                                defaultValue={company?.address}
+                                                placeholder="Calle 123 #45-67"
+                                                className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-400 mb-2">Ciudad</label>
+                                                <input
+                                                    type="text"
+                                                    name="city"
+                                                    defaultValue={company?.city}
+                                                    placeholder="Bogotá"
+                                                    className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-zinc-400 mb-2">Departamento</label>
+                                                <input
+                                                    type="text"
+                                                    name="department"
+                                                    defaultValue={company?.department}
+                                                    placeholder="Cundinamarca"
+                                                    className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                />
+                                            </div>
+                                        </div>
+
                                         <button
-                                            onClick={() => setIsEditing(false)}
-                                            className="text-sm text-muted-foreground hover:text-foreground"
+                                            type="submit"
+                                            className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors mt-6"
                                         >
-                                            Cancelar
+                                            Guardar Información
                                         </button>
-                                    )}
+                                    </form>
                                 </div>
-                                <form action={saveCompanyInfo} className="space-y-4">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-zinc-400 mb-2">
-                                                Nombre de la Empresa *
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name="company_name"
-                                                defaultValue={company?.company_name}
-                                                placeholder="Ej. Tech Solutions SAS"
-                                                required
-                                                className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-zinc-400 mb-2">
-                                                NIT *
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name="nit"
-                                                defaultValue={company?.nit}
-                                                placeholder="900.123.456-7"
-                                                required
-                                                className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-zinc-400 mb-2">
-                                                Representante Legal *
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name="legal_representative"
-                                                defaultValue={company?.legal_representative}
-                                                placeholder="Juan Pérez"
-                                                required
-                                                className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-zinc-400 mb-2">
-                                                Sector / Actividad Económica *
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name="economic_sector"
-                                                defaultValue={company?.economic_sector}
-                                                placeholder="Tecnología, Construcción, etc."
-                                                required
-                                                className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-zinc-400 mb-2">Teléfono</label>
-                                            <input
-                                                type="tel"
-                                                name="phone"
-                                                defaultValue={company?.phone}
-                                                placeholder="+57 300 123 4567"
-                                                className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-zinc-400 mb-2">País</label>
-                                            <input
-                                                type="text"
-                                                name="country"
-                                                defaultValue={company?.country || "Colombia"}
-                                                className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-zinc-400 mb-2">Dirección</label>
-                                        <input
-                                            type="text"
-                                            name="address"
-                                            defaultValue={company?.address}
-                                            placeholder="Calle 123 #45-67"
-                                            className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-zinc-400 mb-2">Ciudad</label>
-                                            <input
-                                                type="text"
-                                                name="city"
-                                                defaultValue={company?.city}
-                                                placeholder="Bogotá"
-                                                className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-zinc-400 mb-2">Departamento</label>
-                                            <input
-                                                type="text"
-                                                name="department"
-                                                defaultValue={company?.department}
-                                                placeholder="Cundinamarca"
-                                                className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        type="submit"
-                                        className="w-full bg-primary text-white py-3 rounded-lg font-semibold hover:bg-primary/90 transition-colors mt-6"
-                                    >
-                                        Guardar Información
-                                    </button>
-                                </form>
                             </motion.div>
                         )}
                     </>
