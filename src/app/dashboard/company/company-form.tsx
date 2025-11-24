@@ -5,6 +5,7 @@ import { Upload, FileText, DollarSign, ShieldCheck, Plus, Building2, Edit2, Chec
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { saveCompanyInfo } from "./actions";
+import { DocumentUpload, UploadedFile } from "./document-upload";
 
 const tabs = [
     { id: "info", label: "Información de la Empresa", icon: Building2 },
@@ -17,10 +18,71 @@ interface CompanyFormProps {
     company?: any;
 }
 
+type DocumentCategory = 'legal' | 'financial' | 'technical';
+
 export default function CompanyForm({ company }: CompanyFormProps) {
     const [activeTab, setActiveTab] = useState("info");
     const [dragActive, setDragActive] = useState(false);
     const [isEditing, setIsEditing] = useState(!company);
+
+    // Estado separado para documentos por categoría
+    const [documentsByCategory, setDocumentsByCategory] = useState<Record<DocumentCategory, UploadedFile[]>>({
+        legal: [],
+        financial: [],
+        technical: []
+    });
+
+    const handleAddFiles = (category: DocumentCategory, files: File[]) => {
+        const newFiles: UploadedFile[] = files.map(file => ({
+            id: `${Date.now()}-${Math.random()}`,
+            name: file.name,
+            size: file.size,
+            uploadDate: new Date(),
+            status: 'uploading',
+            progress: 0
+        }));
+
+        setDocumentsByCategory(prev => ({
+            ...prev,
+            [category]: [...prev[category], ...newFiles]
+        }));
+
+        // Simulate upload progress for each file
+        newFiles.forEach(file => {
+            simulateUpload(category, file.id);
+        });
+    };
+
+    const simulateUpload = (category: DocumentCategory, fileId: string) => {
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += Math.random() * 30;
+            if (progress >= 100) {
+                progress = 100;
+                clearInterval(interval);
+                setDocumentsByCategory(prev => ({
+                    ...prev,
+                    [category]: prev[category].map(f =>
+                        f.id === fileId ? { ...f, status: 'completed', progress: 100 } : f
+                    )
+                }));
+            } else {
+                setDocumentsByCategory(prev => ({
+                    ...prev,
+                    [category]: prev[category].map(f =>
+                        f.id === fileId ? { ...f, progress } : f
+                    )
+                }));
+            }
+        }, 200);
+    };
+
+    const handleRemoveFile = (category: DocumentCategory, fileId: string) => {
+        setDocumentsByCategory(prev => ({
+            ...prev,
+            [category]: prev[category].filter(f => f.id !== fileId)
+        }));
+    };
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();
@@ -348,55 +410,19 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                     )}
 
                     {activeTab !== "info" && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="p-6 rounded-2xl card-gradient-primary card-shimmer shadow-glow"
-                        >
-                            <div className="flex items-start gap-4 mb-6">
-                                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                                    {activeTab === "legal" && <ShieldCheck className="w-5 h-5 text-primary" />}
-                                    {activeTab === "financial" && <DollarSign className="w-5 h-5 text-primary" />}
-                                    {activeTab === "technical" && <FileText className="w-5 h-5 text-primary" />}
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-semibold text-foreground">
-                                        {documentCategories[activeTab as keyof typeof documentCategories]?.title}
-                                    </h3>
-                                    <p className="text-sm text-zinc-400">
-                                        {documentCategories[activeTab as keyof typeof documentCategories]?.description}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* File upload area */}
-                            <div
-                                onDragEnter={handleDrag}
-                                onDragLeave={handleDrag}
-                                onDragOver={handleDrag}
-                                onDrop={handleDrop}
-                                className={cn(
-                                    "border-2 border-dashed rounded-xl p-12 text-center transition-colors",
-                                    dragActive
-                                        ? "border-primary bg-primary/5"
-                                        : "border-white/20 hover:border-white/40"
-                                )}
-                            >
-                                <div className="flex flex-col items-center">
-                                    <Upload className="w-12 h-12 text-zinc-400 mb-4" />
-                                    <p className="text-zinc-400 mb-2">
-                                        Arrastra tus archivos aquí o haz clic para seleccionar
-                                    </p>
-                                    <p className="text-xs text-zinc-500">
-                                        Soporta PDF, Excel y Word hasta 50MB. Tus documentos están encriptados de extremo a extremo.
-                                    </p>
-                                    <button className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors">
-                                        <Plus className="w-4 h-4" />
-                                        Seleccionar Archivos
-                                    </button>
-                                </div>
-                            </div>
-                        </motion.div>
+                        <DocumentUpload
+                            title={documentCategories[activeTab as keyof typeof documentCategories]?.title}
+                            description={documentCategories[activeTab as keyof typeof documentCategories]?.description}
+                            icon={
+                                activeTab === "legal" ? <ShieldCheck className="w-5 h-5 text-primary" /> :
+                                    activeTab === "financial" ? <DollarSign className="w-5 h-5 text-primary" /> :
+                                        <FileText className="w-5 h-5 text-primary" />
+                            }
+                            category={activeTab}
+                            files={documentsByCategory[activeTab as DocumentCategory] || []}
+                            onAddFiles={(files) => handleAddFiles(activeTab as DocumentCategory, files)}
+                            onRemoveFile={(fileId) => handleRemoveFile(activeTab as DocumentCategory, fileId)}
+                        />
                     )}
                 </div>
             </div>
