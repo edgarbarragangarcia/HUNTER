@@ -18,6 +18,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { useDashboard } from "./dashboard-context";
 
 const sidebarLinks = [
     {
@@ -45,8 +46,8 @@ const sidebarLinks = [
 export function Sidebar({ userEmail, userName }: { userEmail?: string; userName?: string | null }) {
     const pathname = usePathname();
     const [isMobileOpen, setIsMobileOpen] = useState(false);
-    const [isCollapsed, setIsCollapsed] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
+    const { isCollapsed, toggleCollapse } = useDashboard();
     const router = useRouter();
 
     useEffect(() => {
@@ -54,23 +55,11 @@ export function Sidebar({ userEmail, userName }: { userEmail?: string; userName?
             setIsDesktop(window.innerWidth >= 1024);
         };
 
-        // Load collapse state from localStorage
-        const savedCollapsed = localStorage.getItem("sidebar-collapsed");
-        if (savedCollapsed !== null) {
-            setIsCollapsed(savedCollapsed === "true");
-        }
-
         checkDesktop();
         window.addEventListener('resize', checkDesktop);
 
         return () => window.removeEventListener('resize', checkDesktop);
     }, []);
-
-    const toggleCollapse = () => {
-        const newState = !isCollapsed;
-        setIsCollapsed(newState);
-        localStorage.setItem("sidebar-collapsed", String(newState));
-    };
 
     const handleSignOut = async () => {
         const supabase = createClient();

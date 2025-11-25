@@ -3,6 +3,9 @@ import { Navbar } from "@/components/dashboard/navbar";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
+import { DashboardProvider } from "@/components/dashboard/dashboard-context";
+import { DashboardMainContent } from "@/components/dashboard/dashboard-main-content";
+
 export default async function DashboardLayout({
     children,
 }: {
@@ -26,27 +29,29 @@ export default async function DashboardLayout({
         .single();
 
     return (
-        <div className="min-h-screen bg-background text-foreground flex relative overflow-hidden">
-            {/* Animated Background */}
-            <div className="fixed inset-0 -z-10">
-                {/* Professional gradient background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/50 to-slate-100 dark:from-[#0a1628] dark:via-[#0d1b2a] dark:to-[#1b263b]" />
+        <DashboardProvider>
+            <div className="min-h-screen bg-background text-foreground flex relative overflow-hidden">
+                {/* Animated Background */}
+                <div className="fixed inset-0 -z-10">
+                    {/* Professional gradient background */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/50 to-slate-100 dark:from-[#0a1628] dark:via-[#0d1b2a] dark:to-[#1b263b]" />
 
-                {/* Subtle accent circles */}
-                <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-blue-400/10 dark:bg-blue-500/5 rounded-full blur-[100px]" />
-                <div className="absolute bottom-0 left-1/4 w-[600px] h-[600px] bg-cyan-400/10 dark:bg-cyan-500/5 rounded-full blur-[100px]" />
+                    {/* Subtle accent circles */}
+                    <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-blue-400/10 dark:bg-blue-500/5 rounded-full blur-[100px]" />
+                    <div className="absolute bottom-0 left-1/4 w-[600px] h-[600px] bg-cyan-400/10 dark:bg-cyan-500/5 rounded-full blur-[100px]" />
+                </div>
+
+                <Sidebar userEmail={user.email} userName={profile?.full_name} />
+
+                <DashboardMainContent>
+                    <Navbar userName={profile?.full_name} userEmail={user.email} />
+                    <main className="flex-1 pt-16">
+                        <div className="container mx-auto px-4 md:px-6 lg:px-8 py-6 max-w-[1600px]">
+                            {children}
+                        </div>
+                    </main>
+                </DashboardMainContent>
             </div>
-
-            <Sidebar userEmail={user.email} userName={profile?.full_name} />
-
-            <div className="flex-1 flex flex-col min-h-screen lg:ml-64 transition-all duration-300">
-                <Navbar userName={profile?.full_name} userEmail={user.email} />
-                <main className="flex-1 pt-16">
-                    <div className="container mx-auto px-4 md:px-6 lg:px-8 py-6 max-w-[1600px]">
-                        {children}
-                    </div>
-                </main>
-            </div>
-        </div>
+        </DashboardProvider>
     );
 }
