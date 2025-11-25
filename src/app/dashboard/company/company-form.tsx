@@ -352,7 +352,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             className="space-y-4"
                         >
                             {/* Company Info Summary Card */}
-                            <div className="p-4 rounded-2xl card-gradient-primary card-shimmer shadow-glow">
+                            <div className="p-4 rounded-2xl card-gradient card-shimmer shadow-glow">
                                 <div className="border-2 border-dashed border-white/20 rounded-xl p-4">
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-2">
@@ -412,7 +412,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="p-6 rounded-2xl card-gradient-primary card-shimmer shadow-glow"
+                                    className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow"
                                 >
                                     <div className="border-2 border-dashed border-white/20 rounded-xl p-8">
                                         <div className="flex items-center justify-between">
@@ -440,7 +440,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="p-6 rounded-2xl card-gradient-primary card-shimmer shadow-glow"
+                                    className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow"
                                 >
                                     <div className="border-2 border-dashed border-white/20 rounded-xl p-8">
                                         <div className="flex items-center justify-between mb-6">
@@ -589,7 +589,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-6 rounded-2xl card-gradient-primary card-shimmer shadow-glow">
+                            <div className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow">
                                 <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
                                     <div className="flex items-center justify-between mb-4">
                                         <div>
@@ -686,7 +686,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-6 rounded-2xl card-gradient-primary card-shimmer shadow-glow">
+                            <div className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow">
                                 <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
                                     <div className="flex items-center justify-between mb-4">
                                         <div>
@@ -783,7 +783,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-6 rounded-2xl card-gradient-primary card-shimmer shadow-glow">
+                            <div className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow">
                                 <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
                                     <div className="flex items-center justify-between mb-4">
                                         <div>

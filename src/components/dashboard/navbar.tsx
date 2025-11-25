@@ -7,6 +7,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
+import { useDashboard } from "./dashboard-context";
+
 interface NavbarProps {
     userName?: string | null;
     userEmail?: string;
@@ -16,6 +18,7 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
+    const { isCollapsed } = useDashboard();
 
     useEffect(() => {
         function handleClickOutside(event: MouseEvent) {
@@ -35,7 +38,10 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
     };
 
     return (
-        <header className="h-16 border-b border-border bg-card/50 backdrop-blur-xl fixed top-0 left-0 right-0 lg:left-64 z-50">
+        <header
+            className={`h-16 border-b border-border bg-card/50 backdrop-blur-xl fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-in-out ${isCollapsed ? "lg:left-[80px]" : "lg:left-64"
+                }`}
+        >
             <div className="h-full px-4 md:px-6 flex items-center justify-between gap-4">
                 {/* Search Bar */}
                 <div className="flex-1 max-w-2xl">
