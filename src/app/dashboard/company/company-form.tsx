@@ -351,15 +351,23 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                     {activeTab === "info" && (
                         <>
                             {!isEditing && company ? (
-                                // Display Mode - Show Company Info
+                                // Display Mode - Show Company Name Only
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="p-4 rounded-2xl card-gradient-primary card-shimmer shadow-glow"
+                                    className="p-6 rounded-2xl card-gradient-primary card-shimmer shadow-glow"
                                 >
-                                    <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-xl font-semibold text-foreground">Información de la Empresa</h3>
+                                    <div className="border-2 border-dashed border-white/20 rounded-xl p-8">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-16 h-16 rounded-xl bg-primary/20 border-2 border-primary/30 flex items-center justify-center">
+                                                    <Building2 className="w-8 h-8 text-primary" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground mb-1">Empresa registrada</p>
+                                                    <h3 className="text-2xl font-bold text-foreground">{company.company_name}</h3>
+                                                </div>
+                                            </div>
                                             <button
                                                 onClick={() => setIsEditing(true)}
                                                 className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors"
@@ -367,82 +375,6 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                                 <Edit2 className="w-4 h-4" />
                                                 Editar
                                             </button>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <p className="text-sm text-muted-foreground">Nombre de la Empresa</p>
-                                                <p className="text-foreground font-medium flex items-center gap-2">
-                                                    <Check className="w-4 h-4 text-primary" />
-                                                    {company.company_name}
-                                                </p>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <p className="text-sm text-muted-foreground">NIT</p>
-                                                <p className="text-foreground font-medium flex items-center gap-2">
-                                                    <Check className="w-4 h-4 text-primary" />
-                                                    {company.nit}
-                                                </p>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <p className="text-sm text-muted-foreground">Representante Legal</p>
-                                                <p className="text-foreground font-medium flex items-center gap-2">
-                                                    <Check className="w-4 h-4 text-primary" />
-                                                    {company.legal_representative}
-                                                </p>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <p className="text-sm text-muted-foreground">Sector Económico</p>
-                                                <p className="text-foreground font-medium flex items-center gap-2">
-                                                    <Check className="w-4 h-4 text-primary" />
-                                                    {company.economic_sector}
-                                                </p>
-                                            </div>
-                                            {company.phone && (
-                                                <div className="space-y-2">
-                                                    <p className="text-sm text-muted-foreground">Teléfono</p>
-                                                    <p className="text-foreground font-medium flex items-center gap-2">
-                                                        <Check className="w-4 h-4 text-primary" />
-                                                        {company.phone}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            {company.country && (
-                                                <div className="space-y-2">
-                                                    <p className="text-sm text-muted-foreground">País</p>
-                                                    <p className="text-foreground font-medium flex items-center gap-2">
-                                                        <Check className="w-4 h-4 text-primary" />
-                                                        {company.country}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            {company.address && (
-                                                <div className="space-y-2 md:col-span-2">
-                                                    <p className="text-sm text-muted-foreground">Dirección</p>
-                                                    <p className="text-foreground font-medium flex items-center gap-2">
-                                                        <Check className="w-4 h-4 text-primary" />
-                                                        {company.address}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            {company.city && (
-                                                <div className="space-y-2">
-                                                    <p className="text-sm text-muted-foreground">Ciudad</p>
-                                                    <p className="text-foreground font-medium flex items-center gap-2">
-                                                        <Check className="w-4 h-4 text-primary" />
-                                                        {company.city}
-                                                    </p>
-                                                </div>
-                                            )}
-                                            {company.department && (
-                                                <div className="space-y-2">
-                                                    <p className="text-sm text-muted-foreground">Departamento</p>
-                                                    <p className="text-foreground font-medium flex items-center gap-2">
-                                                        <Check className="w-4 h-4 text-primary" />
-                                                        {company.department}
-                                                    </p>
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
                                 </motion.div>
