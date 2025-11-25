@@ -74,54 +74,63 @@ export async function saveCompanyInfo(formData: FormData) {
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// Polyfill DOMMatrix for pdf-parse dependency
+if (typeof DOMMatrix === 'undefined') {
+    (global as any).DOMMatrix = class DOMMatrix { };
+}
+const pdf = require('pdf-parse');
+
 export async function generateDocumentSummary(fileBase64: string, mimeType: string, category: string) {
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-            console.error("GEMINI_API_KEY is not set");
-            return { error: "Configuración de IA no encontrada." };
+        // 1. Extract text from PDF first (more reliable than vision for docs)
+        let textContent = "";
+        if (mimeType === "application/pdf") {
+            const buffer = Buffer.from(fileBase64, 'base64');
+            const data = await pdf(buffer);
+            textContent = data.text.slice(0, 2000); // Limit context
+        } else {
+            // For images, we can't easily extract text server-side without OCR
+            // So we'll skip to fallback if it's an image for now, or try vision if available
+            return { summary: "Documento de imagen recibido. Análisis visual no disponible en este momento." };
         }
 
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash-001",
-            generationConfig: {
-                maxOutputTokens: 100, // Limit response length for speed
-                temperature: 0.3, // Lower temperature for faster, more focused responses
-            }
-        });
+        // 2. Try Gemini Pro (Text only) - Much more stable
+        try {
+            const apiKey = process.env.GEMINI_API_KEY;
+            if (apiKey) {
+                const genAI = new GoogleGenerativeAI(apiKey);
+                const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
-        // Simplified prompts for faster processing
-        let prompt = "";
-        switch (category) {
-            case 'legal':
-                prompt = "Resume en 30 palabras: tipo de documento, validez y fechas clave.";
-                break;
-            case 'financial':
-                prompt = "Resume en 30 palabras: cifras principales y situación financiera.";
-                break;
-            case 'technical':
-                prompt = "Resume en 30 palabras: experiencia técnica y certificaciones.";
-                break;
-            default:
-                prompt = "Resume este documento en 30 palabras.";
-        }
-
-        const result = await model.generateContent([
-            prompt,
-            {
-                inlineData: {
-                    data: fileBase64,
-                    mimeType: mimeType
+                let prompt = "";
+                switch (category) {
+                    case 'legal':
+                        prompt = `Resume este documento legal en 30 palabras: ${textContent}`;
+                        break;
+                    case 'financial':
+                        prompt = `Resume este documento financiero en 30 palabras: ${textContent}`;
+                        break;
+                    case 'technical':
+                        prompt = `Resume este documento técnico en 30 palabras: ${textContent}`;
+                        break;
+                    default:
+                        prompt = `Resume este documento en 30 palabras: ${textContent}`;
                 }
-            }
-        ]);
 
-        const response = await result.response;
-        const text = response.text();
-        return { summary: text };
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                const summary = response.text();
+                if (summary) return { summary };
+            }
+        } catch (aiError) {
+            console.error("AI Generation failed, falling back to extraction:", aiError);
+        }
+
+        // 3. Fallback: Return extracted text preview if AI fails
+        const cleanText = textContent.replace(/\s+/g, ' ').trim().slice(0, 150);
+        return { summary: `Vista previa: ${cleanText}...` };
+
     } catch (error) {
-        console.error("Error generating summary:", error);
-        return { error: "No se pudo analizar el documento." };
+        console.error("Error processing document:", error);
+        return { error: "No se pudo leer el documento." };
     }
 }
