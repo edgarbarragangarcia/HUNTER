@@ -22,6 +22,7 @@ export interface UploadedFile {
     uploadDate: Date;
     status: 'uploading' | 'completed' | 'error';
     progress: number;
+    summary?: string;
 }
 
 export function DocumentUpload({ title, description, icon, category, files, onAddFiles, onRemoveFile }: DocumentUploadProps) {

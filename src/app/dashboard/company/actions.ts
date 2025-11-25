@@ -71,3 +71,50 @@ export async function saveCompanyInfo(formData: FormData) {
 
     revalidatePath("/dashboard/company");
 }
+
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+export async function generateDocumentSummary(fileBase64: string, mimeType: string, category: string) {
+    try {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            console.error("GEMINI_API_KEY is not set");
+            return { error: "Configuración de IA no encontrada." };
+        }
+
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        let prompt = "";
+        switch (category) {
+            case 'legal':
+                prompt = "Analiza este documento legal y genera un resumen ejecutivo muy breve (máximo 40 palabras) destacando su validez, propósito y fechas clave. Responde en español y sé directo.";
+                break;
+            case 'financial':
+                prompt = "Analiza este documento financiero y genera un resumen ejecutivo muy breve (máximo 40 palabras) destacando cifras clave y salud financiera. Responde en español y sé directo.";
+                break;
+            case 'technical':
+                prompt = "Analiza este documento técnico y genera un resumen ejecutivo muy breve (máximo 40 palabras) destacando la experiencia o capacidad técnica demostrada. Responde en español y sé directo.";
+                break;
+            default:
+                prompt = "Analiza este documento y genera un resumen muy breve (máximo 40 palabras). Responde en español.";
+        }
+
+        const result = await model.generateContent([
+            prompt,
+            {
+                inlineData: {
+                    data: fileBase64,
+                    mimeType: mimeType
+                }
+            }
+        ]);
+
+        const response = await result.response;
+        const text = response.text();
+        return { summary: text };
+    } catch (error) {
+        console.error("Error generating summary:", error);
+        return { error: "No se pudo analizar el documento." };
+    }
+}

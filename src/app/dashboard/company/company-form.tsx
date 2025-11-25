@@ -1,10 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Upload, FileText, DollarSign, ShieldCheck, Plus, Building2, Edit2, Check, LayoutGrid, ArrowRight } from "lucide-react";
+import { Upload, FileText, DollarSign, ShieldCheck, Plus, Building2, Edit2, Check, LayoutGrid, ArrowRight, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { saveCompanyInfo } from "./actions";
+import { saveCompanyInfo, generateDocumentSummary } from "./actions";
 import { DocumentUpload, UploadedFile } from "./document-upload";
 
 const tabs = [
@@ -33,6 +33,19 @@ export default function CompanyForm({ company }: CompanyFormProps) {
         technical: []
     });
 
+    const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => {
+                const result = reader.result as string;
+                const base64 = result.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = error => reject(error);
+        });
+    };
+
     const handleAddFiles = (category: DocumentCategory, files: File[]) => {
         const newFiles: UploadedFile[] = files.map(file => ({
             id: `${Date.now()}-${Math.random()}`,
@@ -48,9 +61,29 @@ export default function CompanyForm({ company }: CompanyFormProps) {
             [category]: [...prev[category], ...newFiles]
         }));
 
-        // Simulate upload progress for each file
-        newFiles.forEach(file => {
-            simulateUpload(category, file.id);
+        // Process each file
+        newFiles.forEach(async (uploadedFile, index) => {
+            const originalFile = files[index];
+
+            // Start progress simulation
+            simulateUpload(category, uploadedFile.id);
+
+            // Generate AI Summary
+            try {
+                const base64 = await fileToBase64(originalFile);
+                const result = await generateDocumentSummary(base64, originalFile.type, category);
+
+                if (result.summary) {
+                    setDocumentsByCategory(prev => ({
+                        ...prev,
+                        [category]: prev[category].map(f =>
+                            f.id === uploadedFile.id ? { ...f, summary: result.summary } : f
+                        )
+                    }));
+                }
+            } catch (error) {
+                console.error("Error generating summary:", error);
+            }
         });
     };
 
@@ -75,7 +108,11 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                     )
                 }));
             }
-        }, 200);
+        }, 500);
+    };
+
+    const handleFileUpload = (file: File, category: DocumentCategory) => {
+        handleAddFiles(category, [file]);
     };
 
     const handleRemoveFile = (category: DocumentCategory, fileId: string) => {
@@ -117,7 +154,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
     };
 
     return (
-        <div className="h-[calc(100vh-8rem)] flex flex-col">
+        <div className="h-[calc(100vh-8rem)] flex flex-col mr-4">
             {/* Fixed Header */}
             <div className="flex-shrink-0">
                 <div>
@@ -127,9 +164,113 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                     </p>
                 </div>
 
+                {/* Progress Bar */}
+                <div className="mt-6 p-4 rounded-xl bg-white/5 border border-white/10">
+                    <div className="flex items-center justify-between mb-2">
+                        <div>
+                            <h3 className="text-sm font-semibold text-foreground">Completitud del Perfil</h3>
+                            <p className="text-xs text-zinc-500">Completa tu información para mejorar tus oportunidades</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-2xl font-bold text-primary">
+                                {(() => {
+                                    // Calculate completion percentage
+                                    let completed = 0;
+                                    let total = 7; // Total sections to complete
+
+                                    // Check company basic info (5 required fields)
+                                    if (company?.company_name) completed += 0.2;
+                                    if (company?.nit) completed += 0.2;
+                                    if (company?.legal_representative) completed += 0.2;
+                                    if (company?.economic_sector) completed += 0.2;
+                                    if (company?.address && company?.city) completed += 0.2;
+
+                                    // Check documents
+                                    if (documentsByCategory.legal.length > 0) completed += 1;
+                                    if (documentsByCategory.financial.length > 0) completed += 1;
+                                    if (documentsByCategory.technical.length > 0) completed += 1;
+
+                                    const percentage = Math.round((completed / 4) * 100);
+                                    return percentage;
+                                })()}%
+                            </p>
+                            <p className="text-xs text-zinc-500">completado</p>
+                        </div>
+                    </div>
+                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                        <motion.div
+                            className="h-full bg-gradient-to-r from-primary to-primary/60"
+                            initial={{ width: 0 }}
+                            animate={{
+                                width: `${(() => {
+                                    let completed = 0;
+                                    if (company?.company_name) completed += 0.2;
+                                    if (company?.nit) completed += 0.2;
+                                    if (company?.legal_representative) completed += 0.2;
+                                    if (company?.economic_sector) completed += 0.2;
+                                    if (company?.address && company?.city) completed += 0.2;
+                                    if (documentsByCategory.legal.length > 0) completed += 1;
+                                    if (documentsByCategory.financial.length > 0) completed += 1;
+                                    if (documentsByCategory.technical.length > 0) completed += 1;
+                                    return Math.round((completed / 4) * 100);
+                                })()}%`
+                            }}
+                            transition={{ duration: 0.5, ease: "easeOut" }}
+                        />
+                    </div>
+
+                    {/* Completion Checklist */}
+                    <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className={cn(
+                            "flex items-center gap-2 text-xs",
+                            company?.company_name && company?.nit ? "text-primary" : "text-zinc-500"
+                        )}>
+                            {company?.company_name && company?.nit ? (
+                                <Check className="w-4 h-4" />
+                            ) : (
+                                <div className="w-4 h-4 rounded-full border-2 border-zinc-600" />
+                            )}
+                            <span>Info Básica</span>
+                        </div>
+                        <div className={cn(
+                            "flex items-center gap-2 text-xs",
+                            documentsByCategory.legal.length > 0 ? "text-primary" : "text-zinc-500"
+                        )}>
+                            {documentsByCategory.legal.length > 0 ? (
+                                <Check className="w-4 h-4" />
+                            ) : (
+                                <div className="w-4 h-4 rounded-full border-2 border-zinc-600" />
+                            )}
+                            <span>Docs. Legales</span>
+                        </div>
+                        <div className={cn(
+                            "flex items-center gap-2 text-xs",
+                            documentsByCategory.financial.length > 0 ? "text-primary" : "text-zinc-500"
+                        )}>
+                            {documentsByCategory.financial.length > 0 ? (
+                                <Check className="w-4 h-4" />
+                            ) : (
+                                <div className="w-4 h-4 rounded-full border-2 border-zinc-600" />
+                            )}
+                            <span>Info. Financiera</span>
+                        </div>
+                        <div className={cn(
+                            "flex items-center gap-2 text-xs",
+                            documentsByCategory.technical.length > 0 ? "text-primary" : "text-zinc-500"
+                        )}>
+                            {documentsByCategory.technical.length > 0 ? (
+                                <Check className="w-4 h-4" />
+                            ) : (
+                                <div className="w-4 h-4 rounded-full border-2 border-zinc-600" />
+                            )}
+                            <span>Exp. Técnica</span>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Tab Navigation */}
                 <div className="border-b border-white/10 mt-8">
-                    <div className="flex gap-1 overflow-x-auto">
+                    <div className="flex gap-4 overflow-x-auto pb-2">
                         {tabs.map((tab) => {
                             const isActive = activeTab === tab.id;
                             return (
@@ -137,7 +278,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
                                     className={cn(
-                                        "group flex items-center gap-3 px-6 py-4 text-sm font-medium border-b-2 transition-all duration-300 whitespace-nowrap relative",
+                                        "group flex items-center gap-3 px-4 py-4 text-sm font-medium border-b-2 transition-all duration-300 whitespace-nowrap relative",
                                         isActive
                                             ? "border-primary text-foreground"
                                             : "border-transparent text-zinc-400 hover:text-zinc-200"
@@ -163,8 +304,8 @@ export default function CompanyForm({ company }: CompanyFormProps) {
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto mt-6">
-                <div className="min-h-[400px] pb-8">
+            <div className="flex-1 overflow-y-auto mt-6 pr-4">
+                <div className="min-h-[400px] pb-8 max-w-full">
                     {activeTab === "overview" && (
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
@@ -402,21 +543,283 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                         </>
                     )}
 
-                    {activeTab !== "info" && (
-                        <DocumentUpload
-                            title={documentCategories[activeTab as keyof typeof documentCategories]?.title}
-                            description={documentCategories[activeTab as keyof typeof documentCategories]?.description}
-                            icon={
-                                activeTab === "legal" ? <ShieldCheck className="w-5 h-5 text-primary" /> :
-                                    activeTab === "financial" ? <DollarSign className="w-5 h-5 text-primary" /> :
-                                        <FileText className="w-5 h-5 text-primary" />
-                            }
-                            category={activeTab}
-                            files={documentsByCategory[activeTab as DocumentCategory] || []}
-                            onAddFiles={(files) => handleAddFiles(activeTab as DocumentCategory, files)}
-                            onRemoveFile={(fileId) => handleRemoveFile(activeTab as DocumentCategory, fileId)}
-                        />
+                    {/* Legal Documents Tab */}
+                    {activeTab === "legal" && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="space-y-4"
+                        >
+                            <div className="p-6 rounded-2xl card-gradient-primary card-shimmer shadow-glow">
+                                <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div>
+                                            <h3 className="text-xl font-semibold text-foreground">Documentos Legales</h3>
+                                            <p className="text-sm text-muted-foreground mt-1">
+                                                Certificados de existencia, RUT, cédula del representante legal
+                                            </p>
+                                        </div>
+                                        <div className="relative">
+                                            <input
+                                                type="file"
+                                                id="legal-upload"
+                                                className="hidden"
+                                                multiple
+                                                accept=".pdf,.doc,.docx,.jpg,.png"
+                                                onChange={(e) => {
+                                                    const files = Array.from(e.target.files || []);
+                                                    files.forEach(file => handleFileUpload(file, 'legal'));
+                                                }}
+                                            />
+                                            <label
+                                                htmlFor="legal-upload"
+                                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg cursor-pointer transition-colors"
+                                            >
+                                                <Upload className="w-4 h-4" />
+                                                Anexar Documentos
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {/* Uploaded Documents */}
+                                    {documentsByCategory.legal.length > 0 ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                                            {documentsByCategory.legal.map((file) => (
+                                                <motion.div
+                                                    key={file.id}
+                                                    initial={{ opacity: 0, scale: 0.95 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    exit={{ opacity: 0, scale: 0.95 }}
+                                                    className="p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors"
+                                                >
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                                                            <FileText className="w-8 h-8 text-primary flex-shrink-0" />
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
+                                                                <p className="text-xs text-muted-foreground mt-1">
+                                                                    {(file.size / 1024).toFixed(2)} KB
+                                                                </p>
+                                                                {file.summary && (
+                                                                    <div className="mt-2 p-3 bg-primary/5 rounded-lg border border-primary/10">
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                                                            <span className="text-xs font-medium text-primary">Análisis IA</span>
+                                                                        </div>
+                                                                        <p className="text-xs text-zinc-300 leading-relaxed">
+                                                                            {file.summary}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => handleRemoveFile('legal', file.id)}
+                                                            className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group"
+                                                        >
+                                                            <Trash2 className="w-4 h-4 text-muted-foreground group-hover:text-red-500" />
+                                                        </button>
+                                                    </div>
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12">
+                                            <ShieldCheck className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                                            <p className="text-muted-foreground">No has subido documentos legales aún</p>
+                                            <p className="text-sm text-muted-foreground mt-1">Haz clic en "Anexar Documentos" para comenzar</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
                     )}
+
+                    {/* Financial Documents Tab */}
+                    {activeTab === "financial" && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="space-y-4"
+                        >
+                            <div className="p-6 rounded-2xl card-gradient-primary card-shimmer shadow-glow">
+                                <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div>
+                                            <h3 className="text-xl font-semibold text-foreground">Información Financiera</h3>
+                                            <p className="text-sm text-muted-foreground mt-1">
+                                                Estados financieros, declaraciones de renta
+                                            </p>
+                                        </div>
+                                        <div className="relative">
+                                            <input
+                                                type="file"
+                                                id="financial-upload"
+                                                className="hidden"
+                                                multiple
+                                                accept=".pdf,.doc,.docx,.xls,.xlsx"
+                                                onChange={(e) => {
+                                                    const files = Array.from(e.target.files || []);
+                                                    files.forEach(file => handleFileUpload(file, 'financial'));
+                                                }}
+                                            />
+                                            <label
+                                                htmlFor="financial-upload"
+                                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg cursor-pointer transition-colors"
+                                            >
+                                                <Upload className="w-4 h-4" />
+                                                Anexar Documentos
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {/* Uploaded Documents */}
+                                    {documentsByCategory.financial.length > 0 ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                                            {documentsByCategory.financial.map((file) => (
+                                                <motion.div
+                                                    key={file.id}
+                                                    initial={{ opacity: 0, scale: 0.95 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    exit={{ opacity: 0, scale: 0.95 }}
+                                                    className="p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors"
+                                                >
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                                                            <DollarSign className="w-8 h-8 text-primary flex-shrink-0" />
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
+                                                                <p className="text-xs text-muted-foreground mt-1">
+                                                                    {(file.size / 1024).toFixed(2)} KB
+                                                                </p>
+                                                                {file.summary && (
+                                                                    <div className="mt-2 p-3 bg-primary/5 rounded-lg border border-primary/10">
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                                                            <span className="text-xs font-medium text-primary">Análisis IA</span>
+                                                                        </div>
+                                                                        <p className="text-xs text-zinc-300 leading-relaxed">
+                                                                            {file.summary}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => handleRemoveFile('financial', file.id)}
+                                                            className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group"
+                                                        >
+                                                            <Trash2 className="w-4 h-4 text-muted-foreground group-hover:text-red-500" />
+                                                        </button>
+                                                    </div>
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12">
+                                            <DollarSign className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                                            <p className="text-muted-foreground">No has subido documentos financieros aún</p>
+                                            <p className="text-sm text-muted-foreground mt-1">Haz clic en "Anexar Documentos" para comenzar</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {/* Technical Documents Tab */}
+                    {activeTab === "technical" && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="space-y-4"
+                        >
+                            <div className="p-6 rounded-2xl card-gradient-primary card-shimmer shadow-glow">
+                                <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div>
+                                            <h3 className="text-xl font-semibold text-foreground">Experiencia Técnica</h3>
+                                            <p className="text-sm text-muted-foreground mt-1">
+                                                Certificados de trabajos anteriores, experiencia relevante
+                                            </p>
+                                        </div>
+                                        <div className="relative">
+                                            <input
+                                                type="file"
+                                                id="technical-upload"
+                                                className="hidden"
+                                                multiple
+                                                accept=".pdf,.doc,.docx,.jpg,.png"
+                                                onChange={(e) => {
+                                                    const files = Array.from(e.target.files || []);
+                                                    files.forEach(file => handleFileUpload(file, 'technical'));
+                                                }}
+                                            />
+                                            <label
+                                                htmlFor="technical-upload"
+                                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg cursor-pointer transition-colors"
+                                            >
+                                                <Upload className="w-4 h-4" />
+                                                Anexar Documentos
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    {/* Uploaded Documents */}
+                                    {documentsByCategory.technical.length > 0 ? (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                                            {documentsByCategory.technical.map((file) => (
+                                                <motion.div
+                                                    key={file.id}
+                                                    initial={{ opacity: 0, scale: 0.95 }}
+                                                    animate={{ opacity: 1, scale: 1 }}
+                                                    exit={{ opacity: 0, scale: 0.95 }}
+                                                    className="p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors"
+                                                >
+                                                    <div className="flex items-start justify-between gap-3">
+                                                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                                                            <FileText className="w-8 h-8 text-primary flex-shrink-0" />
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
+                                                                <p className="text-xs text-muted-foreground mt-1">
+                                                                    {(file.size / 1024).toFixed(2)} KB
+                                                                </p>
+                                                                {file.summary && (
+                                                                    <div className="mt-2 p-3 bg-primary/5 rounded-lg border border-primary/10">
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                                                            <span className="text-xs font-medium text-primary">Análisis IA</span>
+                                                                        </div>
+                                                                        <p className="text-xs text-zinc-300 leading-relaxed">
+                                                                            {file.summary}
+                                                                        </p>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => handleRemoveFile('technical', file.id)}
+                                                            className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group"
+                                                        >
+                                                            <Trash2 className="w-4 h-4 text-muted-foreground group-hover:text-red-500" />
+                                                        </button>
+                                                    </div>
+                                                </motion.div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-12">
+                                            <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                                            <p className="text-muted-foreground">No has subido documentos técnicos aún</p>
+                                            <p className="text-sm text-muted-foreground mt-1">Haz clic en "Anexar Documentos" para comenzar</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+
+
                 </div>
             </div>
         </div>

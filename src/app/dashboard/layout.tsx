@@ -42,7 +42,7 @@ export default async function DashboardLayout({
             <div className="flex-1 flex flex-col min-h-screen lg:ml-64 transition-all duration-300">
                 <Navbar userName={profile?.full_name} userEmail={user.email} />
                 <main className="flex-1 pt-16">
-                    <div className="container mx-auto p-4 md:p-8">
+                    <div className="container mx-auto px-4 md:px-6 lg:px-8 py-6 max-w-[1600px]">
                         {children}
                     </div>
                 </main>
