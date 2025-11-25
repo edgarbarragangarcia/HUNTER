@@ -66,50 +66,88 @@ export default function CompanyForm({ company }: CompanyFormProps) {
         newFiles.forEach(async (uploadedFile, index) => {
             const originalFile = files[index];
 
-            // Start progress simulation
-            simulateUpload(category, uploadedFile.id);
+            // Step 1: Simulate initial upload (0-40%)
+            let currentProgress = 0;
+            const uploadInterval = setInterval(() => {
+                currentProgress += Math.random() * 10;
+                if (currentProgress >= 40) {
+                    currentProgress = 40;
+                    clearInterval(uploadInterval);
+                }
+                setDocumentsByCategory(prev => ({
+                    ...prev,
+                    [category]: prev[category].map(f =>
+                        f.id === uploadedFile.id ? { ...f, progress: currentProgress } : f
+                    )
+                }));
+            }, 200);
 
-            // Generate AI Summary
+            // Step 2: Convert to base64 and update progress to 50%
             try {
                 const base64 = await fileToBase64(originalFile);
-                const result = await generateDocumentSummary(base64, originalFile.type, category);
+                clearInterval(uploadInterval);
+                setDocumentsByCategory(prev => ({
+                    ...prev,
+                    [category]: prev[category].map(f =>
+                        f.id === uploadedFile.id ? { ...f, progress: 50 } : f
+                    )
+                }));
 
+                // Step 3: Generate AI Summary (50-90%)
+                const aiInterval = setInterval(() => {
+                    setDocumentsByCategory(prev => ({
+                        ...prev,
+                        [category]: prev[category].map(f => {
+                            if (f.id === uploadedFile.id && f.progress < 90) {
+                                return { ...f, progress: Math.min(f.progress + 5, 90) };
+                            }
+                            return f;
+                        })
+                    }));
+                }, 800);
+
+                const result = await generateDocumentSummary(base64, originalFile.type, category);
+                clearInterval(aiInterval);
+
+                // Step 4: Complete with summary
                 if (result.summary) {
                     setDocumentsByCategory(prev => ({
                         ...prev,
                         [category]: prev[category].map(f =>
-                            f.id === uploadedFile.id ? { ...f, summary: result.summary } : f
+                            f.id === uploadedFile.id ? {
+                                ...f,
+                                status: 'completed',
+                                progress: 100,
+                                summary: result.summary
+                            } : f
+                        )
+                    }));
+                } else if (result.error) {
+                    setDocumentsByCategory(prev => ({
+                        ...prev,
+                        [category]: prev[category].map(f =>
+                            f.id === uploadedFile.id ? {
+                                ...f,
+                                status: 'error',
+                                progress: 0
+                            } : f
                         )
                     }));
                 }
             } catch (error) {
-                console.error("Error generating summary:", error);
+                console.error("Error processing document:", error);
+                setDocumentsByCategory(prev => ({
+                    ...prev,
+                    [category]: prev[category].map(f =>
+                        f.id === uploadedFile.id ? {
+                            ...f,
+                            status: 'error',
+                            progress: 0
+                        } : f
+                    )
+                }));
             }
         });
-    };
-
-    const simulateUpload = (category: DocumentCategory, fileId: string) => {
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += Math.random() * 30;
-            if (progress >= 100) {
-                progress = 100;
-                clearInterval(interval);
-                setDocumentsByCategory(prev => ({
-                    ...prev,
-                    [category]: prev[category].map(f =>
-                        f.id === fileId ? { ...f, status: 'completed', progress: 100 } : f
-                    )
-                }));
-            } else {
-                setDocumentsByCategory(prev => ({
-                    ...prev,
-                    [category]: prev[category].map(f =>
-                        f.id === fileId ? { ...f, progress } : f
-                    )
-                }));
-            }
-        }, 500);
     };
 
     const handleFileUpload = (file: File, category: DocumentCategory) => {
@@ -692,7 +730,12 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                                 >
                                                     <div className="flex items-start justify-between gap-3">
                                                         <div className="flex items-start gap-3 flex-1 min-w-0">
-                                                            <DollarSign className="w-8 h-8 text-primary flex-shrink-0" />
+                                                            <button
+                                                                onClick={() => setSelectedDocument(file)}
+                                                                className="hover:bg-primary/10 p-1 rounded-lg transition-colors"
+                                                            >
+                                                                <DollarSign className="w-8 h-8 text-primary flex-shrink-0 cursor-pointer" />
+                                                            </button>
                                                             <div className="flex-1 min-w-0">
                                                                 <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
                                                                 <p className="text-xs text-muted-foreground mt-1">
