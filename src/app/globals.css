@@ -119,7 +119,7 @@
         rgba(248, 250, 252, 0.95) 0%,
         rgba(241, 245, 249, 0.98) 50%,
         rgba(248, 250, 252, 0.95) 100%);
-    border: 1px solid rgba(203, 213, 225, 0.8);
+    border: 1px solid rgba(203, 213, 225, 1);
   }
 
   .dark .card-gradient {
@@ -135,7 +135,7 @@
         rgba(248, 250, 252, 0.95) 0%,
         rgba(241, 245, 249, 0.98) 50%,
         rgba(248, 250, 252, 0.95) 100%);
-    border: 1px solid rgba(203, 213, 225, 0.8);
+    border: 1px solid rgba(203, 213, 225, 1);
   }
 
   .dark .card-gradient-primary {

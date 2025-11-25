@@ -25,6 +25,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
     const [activeTab, setActiveTab] = useState("overview");
     const [dragActive, setDragActive] = useState(false);
     const [isEditing, setIsEditing] = useState(!company);
+    const [selectedDocument, setSelectedDocument] = useState<UploadedFile | null>(null);
 
     // Estado separado para documentos por categoría
     const [documentsByCategory, setDocumentsByCategory] = useState<Record<DocumentCategory, UploadedFile[]>>({
@@ -594,7 +595,12 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                                 >
                                                     <div className="flex items-start justify-between gap-3">
                                                         <div className="flex items-start gap-3 flex-1 min-w-0">
-                                                            <FileText className="w-8 h-8 text-primary flex-shrink-0" />
+                                                            <button
+                                                                onClick={() => setSelectedDocument(file)}
+                                                                className="hover:bg-primary/10 p-1 rounded-lg transition-colors"
+                                                            >
+                                                                <FileText className="w-8 h-8 text-primary flex-shrink-0 cursor-pointer" />
+                                                            </button>
                                                             <div className="flex-1 min-w-0">
                                                                 <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
                                                                 <p className="text-xs text-muted-foreground mt-1">
@@ -778,7 +784,12 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                                 >
                                                     <div className="flex items-start justify-between gap-3">
                                                         <div className="flex items-start gap-3 flex-1 min-w-0">
-                                                            <FileText className="w-8 h-8 text-primary flex-shrink-0" />
+                                                            <button
+                                                                onClick={() => setSelectedDocument(file)}
+                                                                className="hover:bg-primary/10 p-1 rounded-lg transition-colors"
+                                                            >
+                                                                <FileText className="w-8 h-8 text-primary flex-shrink-0 cursor-pointer" />
+                                                            </button>
                                                             <div className="flex-1 min-w-0">
                                                                 <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
                                                                 <p className="text-xs text-muted-foreground mt-1">
@@ -822,6 +833,101 @@ export default function CompanyForm({ company }: CompanyFormProps) {
 
                 </div>
             </div>
+
+            {/* Document Summary Modal */}
+            {selectedDocument && (
+                <div
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    onClick={() => setSelectedDocument(null)}
+                >
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-gradient-to-br from-slate-900 to-slate-800 border border-primary/30 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+                    >
+                        {/* Modal Header */}
+                        <div className="sticky top-0 bg-gradient-to-r from-primary/20 to-cyan-500/20 border-b border-primary/30 p-6">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
+                                        <FileText className="w-6 h-6 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-foreground">{selectedDocument.name}</h3>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            {(selectedDocument.size / 1024).toFixed(2)} KB · {selectedDocument.uploadDate.toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setSelectedDocument(null)}
+                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-muted-foreground">
+                                        <path d="M18 6 6 18"></path>
+                                        <path d="m6 6 12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Modal Body */}
+                        <div className="p-6 space-y-4">
+                            {/* AI Summary Section */}
+                            <div className="p-6 rounded-xl bg-gradient-to-br from-primary/10 to-cyan-500/10 border border-primary/20">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                    <h4 className="text-sm font-semibold text-primary">Análisis con IA - Gemini</h4>
+                                </div>
+                                {selectedDocument.summary ? (
+                                    <p className="text-sm text-zinc-200 leading-relaxed">
+                                        {selectedDocument.summary}
+                                    </p>
+                                ) : (
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                        <span>Generando resumen...</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Document Details */}
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Detalles del Documento</h4>
+                                <div className="grid grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Estado</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            {selectedDocument.status === 'completed' ? (
+                                                <>
+                                                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                                                    <span className="text-green-400">Completado</span>
+                                                </>
+                                            ) : selectedDocument.status === 'uploading' ? (
+                                                <>
+                                                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                                                    <span className="text-blue-400">Subiendo...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div className="w-2 h-2 rounded-full bg-red-500" />
+                                                    <span className="text-red-400">Error</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">Progreso</p>
+                                        <p className="text-foreground font-medium mt-1">{selectedDocument.progress}%</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 }
