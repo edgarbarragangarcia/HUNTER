@@ -140,10 +140,10 @@
 
   .dark .card-gradient-primary {
     background: linear-gradient(135deg,
-        rgba(30, 58, 138, 0.15) 0%,
-        rgba(37, 99, 235, 0.2) 50%,
-        rgba(30, 58, 138, 0.15) 100%);
-    border: 1px solid rgba(100, 160, 255, 0.3);
+        rgba(59, 130, 246, 0.25) 0%,
+        rgba(96, 165, 250, 0.30) 50%,
+        rgba(59, 130, 246, 0.25) 100%);
+    border: 1px solid rgba(100, 160, 255, 0.4);
   }
 
   .card-shimmer {

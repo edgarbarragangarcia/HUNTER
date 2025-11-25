@@ -184,40 +184,7 @@ export function DocumentUpload({ title, description, icon, category, files, onAd
                 </div>
             )}
 
-            {/* File upload area */}
-            <div
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-                className={cn(
-                    "border-2 border-dashed rounded-xl p-12 text-center transition-colors cursor-pointer",
-                    dragActive
-                        ? "border-primary bg-primary/5"
-                        : "border-white/20 hover:border-white/40"
-                )}
-                onClick={() => fileInputRef.current?.click()}
-            >
-                <div className="flex flex-col items-center">
-                    <Upload className="w-12 h-12 text-zinc-400 mb-4" />
-                    <p className="text-zinc-400 mb-2">
-                        Arrastra tus archivos aquí o haz clic para seleccionar
-                    </p>
-                    <p className="text-xs text-zinc-500">
-                        Soporta PDF, Excel y Word hasta 50MB. Tus documentos están encriptados de extremo a extremo.
-                    </p>
-                    <button
-                        className="mt-6 inline-flex items-center gap-2 px-6 py-3 bg-primary text-black rounded-lg font-medium hover:bg-primary/90 transition-colors"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            fileInputRef.current?.click();
-                        }}
-                    >
-                        <Plus className="w-4 h-4" />
-                        Seleccionar Archivos
-                    </button>
-                </div>
-            </div>
+
 
             {/* Hidden file input */}
             <input
