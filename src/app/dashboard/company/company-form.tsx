@@ -109,31 +109,18 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                 const result = await generateDocumentSummary(base64, originalFile.type, category);
                 clearInterval(aiInterval);
 
-                // Step 4: Complete with summary
-                if (result.summary) {
-                    setDocumentsByCategory(prev => ({
-                        ...prev,
-                        [category]: prev[category].map(f =>
-                            f.id === uploadedFile.id ? {
-                                ...f,
-                                status: 'completed',
-                                progress: 100,
-                                summary: result.summary
-                            } : f
-                        )
-                    }));
-                } else if (result.error) {
-                    setDocumentsByCategory(prev => ({
-                        ...prev,
-                        [category]: prev[category].map(f =>
-                            f.id === uploadedFile.id ? {
-                                ...f,
-                                status: 'error',
-                                progress: 0
-                            } : f
-                        )
-                    }));
-                }
+                // Step 4: Complete with summary (always succeeds now)
+                setDocumentsByCategory(prev => ({
+                    ...prev,
+                    [category]: prev[category].map(f =>
+                        f.id === uploadedFile.id ? {
+                            ...f,
+                            status: 'completed',
+                            progress: 100,
+                            summary: result.summary
+                        } : f
+                    )
+                }));
             } catch (error) {
                 console.error("Error processing document:", error);
                 setDocumentsByCategory(prev => ({

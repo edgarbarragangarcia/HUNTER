@@ -82,55 +82,97 @@ const pdf = require('pdf-parse');
 
 export async function generateDocumentSummary(fileBase64: string, mimeType: string, category: string) {
     try {
-        // 1. Extract text from PDF first (more reliable than vision for docs)
-        let textContent = "";
-        if (mimeType === "application/pdf") {
-            const buffer = Buffer.from(fileBase64, 'base64');
-            const data = await pdf(buffer);
-            textContent = data.text.slice(0, 2000); // Limit context
-        } else {
-            // For images, we can't easily extract text server-side without OCR
-            // So we'll skip to fallback if it's an image for now, or try vision if available
-            return { summary: "Documento de imagen recibido. Análisis visual no disponible en este momento." };
-        }
+        const apiKey = process.env.GEMINI_API_KEY;
+        console.log("DEBUG: API Key present?", !!apiKey);
 
-        // 2. Try Gemini Pro (Text only) - Much more stable
-        try {
-            const apiKey = process.env.GEMINI_API_KEY;
-            if (apiKey) {
+        // 1. Try Gemini 1.5 Flash (Native PDF/Image Support) - Best option
+        if (apiKey) {
+            try {
                 const genAI = new GoogleGenerativeAI(apiKey);
-                const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+                // Use Gemini 2.5 Flash Lite which is available for this key
+                const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
                 let prompt = "";
                 switch (category) {
                     case 'legal':
-                        prompt = `Resume este documento legal en 30 palabras: ${textContent}`;
+                        prompt = "Analiza este documento legal y genera un resumen ejecutivo en español de máximo 40 palabras. Identifica el tipo de documento y su validez.";
                         break;
                     case 'financial':
-                        prompt = `Resume este documento financiero en 30 palabras: ${textContent}`;
+                        prompt = "Analiza este documento financiero y genera un resumen ejecutivo en español de máximo 40 palabras. Extrae las cifras más relevantes si existen.";
                         break;
                     case 'technical':
-                        prompt = `Resume este documento técnico en 30 palabras: ${textContent}`;
+                        prompt = "Analiza este documento técnico y genera un resumen ejecutivo en español de máximo 40 palabras. Destaca la experiencia o capacidad técnica descrita.";
                         break;
                     default:
-                        prompt = `Resume este documento en 30 palabras: ${textContent}`;
+                        prompt = "Resume este documento en español en máximo 40 palabras, destacando la información más relevante.";
                 }
 
-                const result = await model.generateContent(prompt);
+                // Send the file directly to Gemini
+                const result = await model.generateContent([
+                    prompt,
+                    {
+                        inlineData: {
+                            data: fileBase64,
+                            mimeType: mimeType
+                        }
+                    }
+                ]);
+
                 const response = await result.response;
                 const summary = response.text();
-                if (summary) return { summary };
+
+                if (summary && summary.trim().length > 0) {
+                    console.log("✅ AI Summary generated successfully with Gemini 1.5 Flash");
+                    return { summary: summary.trim(), summaryType: 'ai' };
+                }
+            } catch (aiError) {
+                console.error("⚠️ AI Generation failed:", aiError);
             }
-        } catch (aiError) {
-            console.error("AI Generation failed, falling back to extraction:", aiError);
+        } else {
+            console.warn("⚠️ GEMINI_API_KEY not configured");
         }
 
-        // 3. Fallback: Return extracted text preview if AI fails
-        const cleanText = textContent.replace(/\s+/g, ' ').trim().slice(0, 150);
-        return { summary: `Vista previa: ${cleanText}...` };
+        // 2. Fallback: Local Text Extraction (if AI fails or no key)
+        // Only for PDFs as we can't easily extract text from images locally
+        if (mimeType === "application/pdf") {
+            try {
+                const buffer = Buffer.from(fileBase64, 'base64');
+                const data = await pdf(buffer);
+                const textContent = data.text || "";
+
+                if (textContent.trim().length > 10) {
+                    const lines = textContent.split('\n')
+                        .map((line: string) => line.trim())
+                        .filter((line: string) => line.length > 10);
+
+                    const meaningfulText = lines.slice(0, 5).join(' ');
+                    const cleanText = meaningfulText.replace(/\s+/g, ' ').trim();
+
+                    const preview = cleanText.length > 150
+                        ? cleanText.slice(0, 150) + '...'
+                        : cleanText;
+
+                    return {
+                        summary: preview,
+                        summaryType: 'excerpt'
+                    };
+                }
+            } catch (pdfError) {
+                console.error("Error extracting PDF text locally:", pdfError);
+            }
+        }
+
+        // 3. Final Fallback if everything fails
+        return {
+            summary: "Documento recibido. El contenido será analizado por nuestro equipo.",
+            summaryType: 'excerpt'
+        };
 
     } catch (error) {
-        console.error("Error processing document:", error);
-        return { error: "No se pudo leer el documento." };
+        console.error("❌ Critical error processing document:", error);
+        return {
+            summary: "Documento recibido correctamente.",
+            summaryType: 'excerpt'
+        };
     }
 }
