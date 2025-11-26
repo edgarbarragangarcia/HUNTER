@@ -384,3 +384,54 @@ export async function listCompanyDocuments() {
     return results;
 }
 
+export async function deleteCompanyDocument(documentId: string) {
+    const supabase = await createClient();
+
+    // 1. Authenticate user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        throw new Error("Usuario no autenticado");
+    }
+
+    // 2. Get document info to find storage path
+    const { data: document, error: fetchError } = await supabase
+        .from('company_documents')
+        .select('*')
+        .eq('id', documentId)
+        .single();
+
+    if (fetchError || !document) {
+        throw new Error("Documento no encontrado");
+    }
+
+    // 3. Delete from Storage
+    // Extract path from URL or use stored path if we had it. 
+    // Since we store publicUrl, we need to extract the path relative to bucket
+    // URL format: .../storage/v1/object/public/company-documents/user_id/category/filename
+    const urlParts = document.file_url.split('/company-documents/');
+    if (urlParts.length === 2) {
+        const storagePath = urlParts[1];
+        const { error: storageError } = await supabase
+            .storage
+            .from('company-documents')
+            .remove([storagePath]);
+
+        if (storageError) {
+            console.error("Error deleting from storage:", storageError);
+            // Continue to delete from DB even if storage delete fails
+        }
+    }
+
+    // 4. Delete from Database
+    const { error: deleteError } = await supabase
+        .from('company_documents')
+        .delete()
+        .eq('id', documentId);
+
+    if (deleteError) {
+        throw new Error(`Error al eliminar de base de datos: ${deleteError.message}`);
+    }
+
+    return { success: true };
+}
+

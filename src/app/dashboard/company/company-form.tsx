@@ -1,12 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Upload, FileText, DollarSign, ShieldCheck, Plus, Building2, Edit2, Check, LayoutGrid, ArrowRight, Trash2, RefreshCw } from "lucide-react";
+import { Upload, FileText, DollarSign, ShieldCheck, Plus, Building2, Edit2, Check, LayoutGrid, ArrowRight, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { saveCompanyInfo, generateDocumentSummary, uploadCompanyDocument, listCompanyDocuments } from "./actions";
+import { saveCompanyInfo, generateDocumentSummary, uploadCompanyDocument, listCompanyDocuments, deleteCompanyDocument } from "./actions";
 import { testDatabaseConnection } from "./test-db";
-import { migrateDocuments } from "./migrate-documents";
 import { DocumentUpload, UploadedFile } from "./document-upload";
 
 const tabs = [
@@ -28,8 +27,6 @@ export default function CompanyForm({ company }: CompanyFormProps) {
     const [dragActive, setDragActive] = useState(false);
     const [isEditing, setIsEditing] = useState(!company);
     const [selectedDocument, setSelectedDocument] = useState<UploadedFile | null>(null);
-    const [isMigrating, setIsMigrating] = useState(false);
-    const [migrationResult, setMigrationResult] = useState<any>(null);
 
     // Estado separado para documentos por categoría
     const [documentsByCategory, setDocumentsByCategory] = useState<Record<DocumentCategory, UploadedFile[]>>({
@@ -173,12 +170,23 @@ export default function CompanyForm({ company }: CompanyFormProps) {
         handleAddFiles(category, [file]);
     };
 
-    const handleRemoveFile = (category: DocumentCategory, fileId: string) => {
+    const handleRemoveFile = async (category: DocumentCategory, fileId: string) => {
+        // Optimistic update
         setDocumentsByCategory(prev => ({
             ...prev,
             [category]: prev[category].filter(f => f.id !== fileId)
         }));
+
+        try {
+            await deleteCompanyDocument(fileId);
+            console.log("✅ Document deleted successfully");
+        } catch (error) {
+            console.error("❌ Error deleting document:", error);
+            // Revert changes if needed, but for now just log error
+            // In a real app we might want to show a toast and restore the file
+        }
     };
+
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();
@@ -195,38 +203,6 @@ export default function CompanyForm({ company }: CompanyFormProps) {
         e.stopPropagation();
         setDragActive(false);
     };
-
-    const handleMigrate = async () => {
-        setIsMigrating(true);
-        setMigrationResult(null);
-
-        try {
-            console.log("🔄 Starting migration...");
-            const result = await migrateDocuments();
-            console.log("📊 Migration result:", result);
-
-            setMigrationResult(result);
-
-            // Reload documents to show newly migrated ones
-            if (result.migrated > 0) {
-                const docs = await listCompanyDocuments();
-                setDocumentsByCategory({
-                    legal: docs.legal as UploadedFile[],
-                    financial: docs.financial as UploadedFile[],
-                    technical: docs.technical as UploadedFile[]
-                });
-            }
-        } catch (error) {
-            console.error("❌ Migration error:", error);
-            setMigrationResult({
-                success: false,
-                errors: [error instanceof Error ? error.message : "Error desconocido"]
-            });
-        } finally {
-            setIsMigrating(false);
-        }
-    };
-
 
     const documentCategories = {
         legal: {
@@ -357,65 +333,6 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                         </div>
                     </div>
                 </div>
-
-                {/* Migration Button - Shows if migration might be needed */}
-                {migrationResult || (
-                    <div className="mt-4">
-                        <button
-                            onClick={handleMigrate}
-                            disabled={isMigrating}
-                            className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            <RefreshCw className={cn("w-4 h-4", isMigrating && "animate-spin")} />
-                            {isMigrating ? "Migrando documentos..." : "🔄 Sincronizar Documentos de Storage"}
-                        </button>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Si subiste documentos anteriormente y no se muestran, haz clic aquí para sincronizarlos.
-                        </p>
-                    </div>
-                )}
-
-                {/* Migration Result Display */}
-                {migrationResult && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={cn(
-                            "mt-4 p-4 rounded-lg border-2",
-                            migrationResult.success
-                                ? "bg-green-500/10 border-green-500/30"
-                                : "bg-red-500/10 border-red-500/30"
-                        )}
-                    >
-                        <div className="flex items-center justify-between mb-2">
-                            <h4 className={cn(
-                                "font-semibold",
-                                migrationResult.success ? "text-green-400" : "text-red-400"
-                            )}>
-                                {migrationResult.success ? "✅ Migración completada" : "❌ Error en migración"}
-                            </h4>
-                            <button
-                                onClick={() => setMigrationResult(null)}
-                                className="text-muted-foreground hover:text-foreground"
-                            >
-                                ✕
-                            </button>
-                        </div>
-                        <div className="text-sm space-y-1">
-                            <p>Procesados: {migrationResult.processed || 0}</p>
-                            <p>Migrados: {migrationResult.migrated || 0}</p>
-                            <p>Omitidos: {migrationResult.skipped || 0}</p>
-                            {migrationResult.errors && migrationResult.errors.length > 0 && (
-                                <div className="mt-2">
-                                    <p className="text-red-400 font-medium">Errores:</p>
-                                    {migrationResult.errors.map((err: string, i: number) => (
-                                        <p key={i} className="text-xs text-red-300">• {err}</p>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </motion.div>
-                )}
 
                 {/* Tab Navigation */}
                 <div className="border-b border-white/10 mt-8">
