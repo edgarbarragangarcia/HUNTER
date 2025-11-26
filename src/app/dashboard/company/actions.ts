@@ -26,19 +26,34 @@ export async function saveCompanyInfo(formData: FormData) {
     }
 
     // Prepare company data
-    const companyData = {
+    const companyData: any = {
         profile_id: profile.id,
-        company_name: formData.get("company_name") as string,
-        nit: formData.get("nit") as string,
-        legal_representative: formData.get("legal_representative") as string,
-        economic_sector: formData.get("economic_sector") as string,
-        phone: formData.get("phone") as string || null,
-        address: formData.get("address") as string || null,
-        city: formData.get("city") as string || null,
-        department: formData.get("department") as string || null,
-        country: formData.get("country") as string || "Colombia",
         updated_at: new Date().toISOString(),
     };
+
+    // Only add fields if they are present in formData to allow partial updates
+    const fields = [
+        "company_name", "nit", "legal_representative", "economic_sector",
+        "phone", "address", "city", "department", "country"
+    ];
+
+    fields.forEach(field => {
+        const value = formData.get(field);
+        if (value !== null) {
+            companyData[field] = value;
+        }
+    });
+
+    // Handle JSON fields
+    if (formData.get("unspsc_codes")) {
+        companyData.unspsc_codes = JSON.parse(formData.get("unspsc_codes") as string);
+    }
+    if (formData.get("financial_indicators")) {
+        companyData.financial_indicators = JSON.parse(formData.get("financial_indicators") as string);
+    }
+    if (formData.get("experience_summary")) {
+        companyData.experience_summary = JSON.parse(formData.get("experience_summary") as string);
+    }
 
     // Check if company already exists for this profile
     const { data: existingCompany } = await supabase
@@ -67,6 +82,60 @@ export async function saveCompanyInfo(formData: FormData) {
     if (error) {
         console.error("Error saving company:", error);
         throw new Error(error.message);
+    }
+
+    revalidatePath("/dashboard/company");
+}
+
+export async function saveFinancials(formData: FormData) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) throw new Error("No authenticated user");
+
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", user.id)
+        .single();
+
+    if (!profile) throw new Error("Profile not found");
+
+    const financialData: any = {
+        updated_at: new Date().toISOString(),
+    };
+
+    if (formData.get("financial_indicators")) {
+        financialData.financial_indicators = JSON.parse(formData.get("financial_indicators") as string);
+    }
+
+    // Also allow saving UNSPSC codes here if needed
+    if (formData.get("unspsc_codes")) {
+        financialData.unspsc_codes = JSON.parse(formData.get("unspsc_codes") as string);
+    }
+
+    // Allow saving experience summary
+    if (formData.get("experience_summary")) {
+        financialData.experience_summary = JSON.parse(formData.get("experience_summary") as string);
+    }
+
+    const { data: existingCompany } = await supabase
+        .from("companies")
+        .select("id")
+        .eq("profile_id", profile.id)
+        .single();
+
+    if (existingCompany) {
+        const { error } = await supabase
+            .from("companies")
+            .update(financialData)
+            .eq("id", existingCompany.id);
+
+        if (error) throw new Error(error.message);
+    } else {
+        // Should not happen in this context, but handle creation if needed
+        // For now, assume company exists or use saveCompanyInfo for creation
+        throw new Error("Company profile must exist before saving financials");
     }
 
     revalidatePath("/dashboard/company");
@@ -119,16 +188,41 @@ export async function generateDocumentSummary(fileBase64: string | null, mimeTyp
                 let prompt = "";
                 switch (category) {
                     case 'legal':
-                        prompt = "Analiza este documento legal y genera un resumen ejecutivo en español de máximo 40 palabras. Identifica el tipo de documento y su validez.";
+                        prompt = `Analiza este documento legal (posiblemente RUP o Cámara de Comercio). 
+                        1. Genera un breve resumen de texto de máximo 40 palabras.
+                        2. Extrae los CÓDIGOS UNSPSC (Clasificador de Bienes y Servicios) si están presentes.
+                        3. Extrae información de experiencia si está presente (número de contratos, valor total).
+                        
+                        Responde EXCLUSIVAMENTE en formato JSON con esta estructura:
+                        {
+                          "summary": "Texto del resumen...",
+                          "unspsc_codes": ["Código1", "Código2"],
+                          "experience_summary": { "total_contracts": 0, "total_value_smmlv": 0 }
+                        }
+                        Si no encuentras datos específicos, deja los arrays/objetos vacíos.`;
                         break;
                     case 'financial':
-                        prompt = "Analiza este documento financiero y genera un resumen ejecutivo en español de máximo 40 palabras. Extrae las cifras más relevantes si existen.";
+                        prompt = `Analiza este documento financiero (Estados Financieros, Declaración de Renta).
+                        1. Genera un breve resumen de texto de máximo 40 palabras.
+                        2. Extrae indicadores financieros clave: Liquidez, Endeudamiento, Capital de Trabajo, Patrimonio.
+                        
+                        Responde EXCLUSIVAMENTE en formato JSON con esta estructura:
+                        {
+                          "summary": "Texto del resumen...",
+                          "financial_indicators": {
+                            "liquidity_index": 0,
+                            "indebtedness_index": 0,
+                            "working_capital": 0,
+                            "equity": 0
+                          }
+                        }
+                        Si no encuentras datos específicos, pon null o 0.`;
                         break;
                     case 'technical':
-                        prompt = "Analiza este documento técnico y genera un resumen ejecutivo en español de máximo 40 palabras. Destaca la experiencia o capacidad técnica descrita.";
+                        prompt = "Analiza este documento técnico y genera un resumen ejecutivo en español de máximo 40 palabras. Destaca la experiencia o capacidad técnica descrita. Devuelve solo el texto del resumen.";
                         break;
                     default:
-                        prompt = "Resume este documento en español en máximo 40 palabras, destacando la información más relevante.";
+                        prompt = "Resume este documento en español en máximo 40 palabras, destacando la información más relevante. Devuelve solo el texto del resumen.";
                 }
 
                 const result = await model.generateContent([
@@ -150,10 +244,53 @@ export async function generateDocumentSummary(fileBase64: string | null, mimeTyp
                     // Save summary to database metadata if dbId is provided
                     if (dbId) {
                         const supabase = await createClient();
+
+                        // Save summary to document metadata
                         await supabase
                             .from('company_documents')
                             .update({ metadata: { summary: summary.trim() } })
                             .eq('id', dbId);
+
+                        // NEW: Try to parse JSON and update company profile if applicable
+                        try {
+                            // Clean markdown code blocks if present
+                            const jsonStr = summary.replace(/```json\n|\n```/g, '').replace(/```/g, '').trim();
+                            if (jsonStr.startsWith('{') || jsonStr.startsWith('[')) {
+                                const extractedData = JSON.parse(jsonStr);
+                                console.log("📊 Structured data extracted:", extractedData);
+
+                                // Get company_id from document
+                                const { data: docData } = await supabase
+                                    .from('company_documents')
+                                    .select('company_id')
+                                    .eq('id', dbId)
+                                    .single();
+
+                                if (docData?.company_id) {
+                                    const updateData: any = {};
+
+                                    if (category === 'legal' && extractedData.unspsc_codes) {
+                                        updateData.unspsc_codes = extractedData.unspsc_codes;
+                                    }
+                                    if (category === 'financial' && extractedData.financial_indicators) {
+                                        updateData.financial_indicators = extractedData.financial_indicators;
+                                    }
+                                    if (extractedData.experience_summary) {
+                                        updateData.experience_summary = extractedData.experience_summary;
+                                    }
+
+                                    if (Object.keys(updateData).length > 0) {
+                                        await supabase
+                                            .from('companies')
+                                            .update(updateData)
+                                            .eq('id', docData.company_id);
+                                        console.log("✅ Company profile updated with extracted data");
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            console.log("ℹ️ Response was not JSON or could not be parsed (expected for general summaries)");
+                        }
                     }
 
                     return { summary: summary.trim(), summaryType: 'ai' };
@@ -434,4 +571,3 @@ export async function deleteCompanyDocument(documentId: string) {
 
     return { success: true };
 }
-

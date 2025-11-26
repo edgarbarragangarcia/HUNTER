@@ -14,6 +14,7 @@ const tabs = [
     { id: "legal", label: "Documentos Legales", icon: ShieldCheck },
     { id: "financial", label: "Información Financiera", icon: DollarSign },
     { id: "technical", label: "Experiencia Técnica", icon: FileText },
+    { id: "capacity", label: "Capacidad de Contratación", icon: Check },
 ];
 
 interface CompanyFormProps {
@@ -27,6 +28,9 @@ export default function CompanyForm({ company }: CompanyFormProps) {
     const [dragActive, setDragActive] = useState(false);
     const [isEditing, setIsEditing] = useState(!company);
     const [selectedDocument, setSelectedDocument] = useState<UploadedFile | null>(null);
+    const [documentModalOpen, setDocumentModalOpen] = useState<{ category: string; open: boolean }>({ category: '', open: false });
+    const [uploadModalOpen, setUploadModalOpen] = useState<{ category: string; open: boolean }>({ category: '', open: false });
+    const [isEditingFinancial, setIsEditingFinancial] = useState(false);
 
     // Estado separado para documentos por categoría
     const [documentsByCategory, setDocumentsByCategory] = useState<Record<DocumentCategory, UploadedFile[]>>({
@@ -335,8 +339,8 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                 </div>
 
                 {/* Tab Navigation */}
-                <div className="border-b border-white/10 mt-8">
-                    <div className="flex gap-4 overflow-x-auto pb-2">
+                <div className="border-b border-white/10 mt-8 w-full">
+                    <div className="flex gap-4 overflow-x-auto pb-2 w-full max-w-full scrollbar-thin scrollbar-thumb-primary/10 scrollbar-track-transparent">
                         {tabs.map((tab) => {
                             const isActive = activeTab === tab.id;
                             return (
@@ -388,45 +392,36 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                             </div>
                                             <h3 className="text-lg font-semibold text-foreground">Información de la Empresa</h3>
                                         </div>
-                                        {company && (
-                                            <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-primary/10 border border-primary/30">
-                                                <Check className="w-3 h-3 text-primary" />
-                                                <span className="text-xs text-primary font-medium">Completado</span>
-                                            </div>
-                                        )}
+                                        <div className="flex items-center gap-2">
+                                            {company && (
+                                                <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-primary/10 border border-primary/30">
+                                                    <Check className="w-3 h-3 text-primary" />
+                                                    <span className="text-xs text-primary font-medium">Completado</span>
+                                                </div>
+                                            )}
+                                            <button
+                                                onClick={() => {
+                                                    setActiveTab("info");
+                                                    setIsEditing(true);
+                                                }}
+                                                className="p-1.5 hover:bg-white/10 text-primary rounded-lg transition-colors"
+                                                title="Editar Información"
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                            </button>
+                                            {documentsByCategory.legal.length > 0 && (
+                                                <button
+                                                    onClick={() => setDocumentModalOpen({ category: 'legal', open: true })}
+                                                    className="p-1.5 hover:bg-white/10 text-primary rounded-lg transition-colors"
+                                                    title="Ver Documentos"
+                                                >
+                                                    <FileText className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
 
-                                    {company ? (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                                            <div className="space-y-0.5">
-                                                <p className="text-xs text-muted-foreground">Empresa</p>
-                                                <p className="text-sm text-foreground font-medium">{company.company_name}</p>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <p className="text-xs text-muted-foreground">NIT</p>
-                                                <p className="text-sm text-foreground font-medium">{company.nit}</p>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <p className="text-xs text-muted-foreground">Representante Legal</p>
-                                                <p className="text-sm text-foreground font-medium">{company.legal_representative}</p>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                <p className="text-xs text-muted-foreground">Sector Económico</p>
-                                                <p className="text-sm text-foreground font-medium">{company.economic_sector}</p>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="mt-3">
-                                            <p className="text-sm text-muted-foreground mb-3">Aún no has completado la información de tu empresa.</p>
-                                            <button
-                                                onClick={() => setActiveTab("info")}
-                                                className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg transition-colors"
-                                            >
-                                                Completar Información
-                                                <ArrowRight className="w-3 h-3" />
-                                            </button>
-                                        </div>
-                                    )}
+
                                 </div>
                             </div>
                         </motion.div>
@@ -618,38 +613,43 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                         >
                             <div className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow">
                                 <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
+                                    <div className="mb-6">
+                                        <h3 className="text-xl font-semibold text-foreground">Documentos Legales</h3>
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                            Documentos requeridos para acreditar la capacidad jurídica de tu empresa
+                                        </p>
+                                    </div>
+
                                     <div className="flex items-center justify-between mb-4">
                                         <div>
-                                            <h3 className="text-xl font-semibold text-foreground">Documentos Legales</h3>
-                                            <p className="text-sm text-muted-foreground mt-1">
-                                                Certificados de existencia, RUT, cédula del representante legal
+                                            <p className="text-sm font-medium text-foreground">
+                                                {documentsByCategory.legal.length} documento(s) subido(s)
                                             </p>
                                         </div>
-                                        <div className="relative">
-                                            <input
-                                                type="file"
-                                                id="legal-upload"
-                                                className="hidden"
-                                                multiple
-                                                accept=".pdf,.doc,.docx,.jpg,.png"
-                                                onChange={(e) => {
-                                                    const files = Array.from(e.target.files || []);
-                                                    files.forEach(file => handleFileUpload(file, 'legal'));
-                                                }}
-                                            />
-                                            <label
-                                                htmlFor="legal-upload"
-                                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg cursor-pointer transition-colors"
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setUploadModalOpen({ category: 'legal', open: true })}
+                                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors"
                                             >
                                                 <Upload className="w-4 h-4" />
-                                                Anexar Documentos
-                                            </label>
+                                                Cargar Documentos
+                                            </button>
+                                            {documentsByCategory.legal.length > 0 && (
+                                                <button
+                                                    onClick={() => setDocumentModalOpen({ category: 'legal', open: true })}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-foreground rounded-lg transition-colors border border-white/20"
+                                                >
+                                                    <FileText className="w-4 h-4" />
+                                                    Ver Documentos
+                                                </button>
+                                            )}
+
                                         </div>
                                     </div>
 
                                     {/* Uploaded Documents */}
                                     {documentsByCategory.legal.length > 0 ? (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                                        <div className="hidden">
                                             {documentsByCategory.legal.map((file) => (
                                                 <motion.div
                                                     key={file.id}
@@ -694,13 +694,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                                 </motion.div>
                                             ))}
                                         </div>
-                                    ) : (
-                                        <div className="text-center py-12">
-                                            <ShieldCheck className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                                            <p className="text-muted-foreground">No has subido documentos legales aún</p>
-                                            <p className="text-sm text-muted-foreground mt-1">Haz clic en "Anexar Documentos" para comenzar</p>
-                                        </div>
-                                    )}
+                                    ) : null}
                                 </div>
                             </div>
                         </motion.div>
@@ -715,38 +709,45 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                         >
                             <div className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow">
                                 <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
+                                    <div className="mb-6">
+                                        <h3 className="text-xl font-semibold text-foreground">Información Financiera</h3>
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                            Documentos para acreditar la capacidad financiera y fiscal de tu empresa
+                                        </p>
+                                    </div>
+
+
+
                                     <div className="flex items-center justify-between mb-4">
                                         <div>
-                                            <h3 className="text-xl font-semibold text-foreground">Información Financiera</h3>
-                                            <p className="text-sm text-muted-foreground mt-1">
-                                                Estados financieros, declaraciones de renta
+                                            <p className="text-sm font-medium text-foreground">
+                                                {documentsByCategory.financial.length} documento(s) subido(s)
                                             </p>
                                         </div>
-                                        <div className="relative">
-                                            <input
-                                                type="file"
-                                                id="financial-upload"
-                                                className="hidden"
-                                                multiple
-                                                accept=".pdf,.doc,.docx,.xls,.xlsx"
-                                                onChange={(e) => {
-                                                    const files = Array.from(e.target.files || []);
-                                                    files.forEach(file => handleFileUpload(file, 'financial'));
-                                                }}
-                                            />
-                                            <label
-                                                htmlFor="financial-upload"
-                                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg cursor-pointer transition-colors"
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setUploadModalOpen({ category: 'financial', open: true })}
+                                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors"
                                             >
                                                 <Upload className="w-4 h-4" />
-                                                Anexar Documentos
-                                            </label>
+                                                Cargar Documentos
+                                            </button>
+                                            {documentsByCategory.financial.length > 0 && (
+                                                <button
+                                                    onClick={() => setDocumentModalOpen({ category: 'financial', open: true })}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-foreground rounded-lg transition-colors border border-white/20"
+                                                >
+                                                    <FileText className="w-4 h-4" />
+                                                    Ver Documentos
+                                                </button>
+                                            )}
+
                                         </div>
                                     </div>
 
                                     {/* Uploaded Documents */}
                                     {documentsByCategory.financial.length > 0 ? (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                                        <div className="hidden">
                                             {documentsByCategory.financial.map((file) => (
                                                 <motion.div
                                                     key={file.id}
@@ -791,18 +792,134 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                                 </motion.div>
                                             ))}
                                         </div>
-                                    ) : (
-                                        <div className="text-center py-12">
-                                            <DollarSign className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                                            <p className="text-muted-foreground">No has subido documentos financieros aún</p>
-                                            <p className="text-sm text-muted-foreground mt-1">Haz clic en "Anexar Documentos" para comenzar</p>
-                                        </div>
-                                    )}
+                                    ) : null}
                                 </div>
                             </div>
                         </motion.div>
                     )}
 
+                    {/* Capacity Tab */}
+                    {activeTab === "capacity" && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="space-y-4"
+                        >
+                            <div className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow">
+                                <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
+                                    <div className="mb-6">
+                                        <h3 className="text-xl font-semibold text-foreground">Capacidad de Contratación</h3>
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                            Información extraída automáticamente de tus documentos para el análisis de licitaciones.
+                                        </p>
+                                    </div>
+
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div>
+                                            <p className="text-sm font-medium text-foreground">
+                                                {documentsByCategory.financial.length} documento(s) subido(s)
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => setIsEditingFinancial(true)}
+                                                className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors"
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                                Editar Indicadores
+                                            </button>
+                                            {documentsByCategory.financial.length > 0 && (
+                                                <button
+                                                    onClick={() => setDocumentModalOpen({ category: 'financial', open: true })}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-foreground rounded-lg transition-colors border border-white/20"
+                                                >
+                                                    <FileText className="w-4 h-4" />
+                                                    Ver Documentos
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Financial Indicators */}
+                                    <div className="mb-8">
+                                        <h4 className="text-sm font-medium text-primary mb-4 flex items-center gap-2">
+                                            <DollarSign className="w-4 h-4" />
+                                            Indicadores Financieros
+                                        </h4>
+                                        {company?.financial_indicators ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                                                    <p className="text-xs text-muted-foreground mb-1">Índice de Liquidez</p>
+                                                    <p className="text-2xl font-bold text-foreground">
+                                                        {company.financial_indicators.liquidity_index || "N/A"}
+                                                    </p>
+                                                </div>
+                                                <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                                                    <p className="text-xs text-muted-foreground mb-1">Nivel de Endeudamiento</p>
+                                                    <p className="text-2xl font-bold text-foreground">
+                                                        {company.financial_indicators.indebtedness_index ? `${(company.financial_indicators.indebtedness_index * 100).toFixed(1)}%` : "N/A"}
+                                                    </p>
+                                                </div>
+                                                <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                                                    <p className="text-xs text-muted-foreground mb-1">Capital de Trabajo</p>
+                                                    <p className="text-2xl font-bold text-foreground">
+                                                        {company.financial_indicators.working_capital ? `$${company.financial_indicators.working_capital.toLocaleString()}` : "N/A"}
+                                                    </p>
+                                                </div>
+                                                <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                                                    <p className="text-xs text-muted-foreground mb-1">Patrimonio</p>
+                                                    <p className="text-2xl font-bold text-foreground">
+                                                        {company.financial_indicators.equity ? `$${company.financial_indicators.equity.toLocaleString()}` : "N/A"}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ) : null}
+                                    </div>
+
+                                    {/* UNSPSC Codes */}
+                                    <div className="mb-8">
+                                        <h4 className="text-sm font-medium text-primary mb-4 flex items-center gap-2">
+                                            <LayoutGrid className="w-4 h-4" />
+                                            Códigos UNSPSC (Clasificador de Bienes y Servicios)
+                                        </h4>
+                                        {company?.unspsc_codes && company.unspsc_codes.length > 0 ? (
+                                            <div className="flex flex-wrap gap-2">
+                                                {company.unspsc_codes.map((code: string, index: number) => (
+                                                    <span key={index} className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
+                                                        {code}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        ) : null}
+                                    </div>
+
+                                    {/* Experience Summary */}
+                                    <div>
+                                        <h4 className="text-sm font-medium text-primary mb-4 flex items-center gap-2">
+                                            <FileText className="w-4 h-4" />
+                                            Resumen de Experiencia
+                                        </h4>
+                                        {company?.experience_summary ? (
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                                                    <p className="text-xs text-muted-foreground mb-1">Total Contratos Ejecutados</p>
+                                                    <p className="text-2xl font-bold text-foreground">
+                                                        {company.experience_summary.total_contracts || 0}
+                                                    </p>
+                                                </div>
+                                                <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                                                    <p className="text-xs text-muted-foreground mb-1">Valor Total (SMMLV)</p>
+                                                    <p className="text-2xl font-bold text-foreground">
+                                                        {company.experience_summary.total_value_smmlv ? company.experience_summary.total_value_smmlv.toLocaleString() : 0}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ) : null}
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
                     {/* Technical Documents Tab */}
                     {activeTab === "technical" && (
                         <motion.div
@@ -812,38 +929,45 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                         >
                             <div className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow">
                                 <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
+                                    <div className="mb-6">
+                                        <h3 className="text-xl font-semibold text-foreground">Experiencia Técnica</h3>
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                            Documentos para acreditar tu experiencia y capacidad técnica
+                                        </p>
+                                    </div>
+
+
+
                                     <div className="flex items-center justify-between mb-4">
                                         <div>
-                                            <h3 className="text-xl font-semibold text-foreground">Experiencia Técnica</h3>
-                                            <p className="text-sm text-muted-foreground mt-1">
-                                                Certificados de trabajos anteriores, experiencia relevante
+                                            <p className="text-sm font-medium text-foreground">
+                                                {documentsByCategory.technical.length} documento(s) subido(s)
                                             </p>
                                         </div>
-                                        <div className="relative">
-                                            <input
-                                                type="file"
-                                                id="technical-upload"
-                                                className="hidden"
-                                                multiple
-                                                accept=".pdf,.doc,.docx,.jpg,.png"
-                                                onChange={(e) => {
-                                                    const files = Array.from(e.target.files || []);
-                                                    files.forEach(file => handleFileUpload(file, 'technical'));
-                                                }}
-                                            />
-                                            <label
-                                                htmlFor="technical-upload"
-                                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg cursor-pointer transition-colors"
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setUploadModalOpen({ category: 'technical', open: true })}
+                                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors"
                                             >
                                                 <Upload className="w-4 h-4" />
-                                                Anexar Documentos
-                                            </label>
+                                                Cargar Documentos
+                                            </button>
+                                            {documentsByCategory.technical.length > 0 && (
+                                                <button
+                                                    onClick={() => setDocumentModalOpen({ category: 'technical', open: true })}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-foreground rounded-lg transition-colors border border-white/20"
+                                                >
+                                                    <FileText className="w-4 h-4" />
+                                                    Ver Documentos
+                                                </button>
+                                            )}
+
                                         </div>
                                     </div>
 
                                     {/* Uploaded Documents */}
                                     {documentsByCategory.technical.length > 0 ? (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                                        <div className="hidden">
                                             {documentsByCategory.technical.map((file) => (
                                                 <motion.div
                                                     key={file.id}
@@ -888,51 +1012,610 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                                 </motion.div>
                                             ))}
                                         </div>
-                                    ) : (
-                                        <div className="text-center py-12">
-                                            <FileText className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                                            <p className="text-muted-foreground">No has subido documentos técnicos aún</p>
-                                            <p className="text-sm text-muted-foreground mt-1">Haz clic en "Anexar Documentos" para comenzar</p>
-                                        </div>
-                                    )}
+                                    ) : null}
                                 </div>
                             </div>
                         </motion.div>
-                    )}
+                    )
+                    }
+
+
 
 
                 </div>
             </div>
 
             {/* Document Summary Modal */}
-            {selectedDocument && (
+            {
+                selectedDocument && (
+                    <div
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                        onClick={() => setSelectedDocument(null)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-gradient-to-br from-slate-900 to-slate-800 border border-primary/30 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+                        >
+                            {/* Modal Header */}
+                            <div className="sticky top-0 bg-gradient-to-r from-primary/20 to-cyan-500/20 border-b border-primary/30 p-6">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
+                                            <FileText className="w-6 h-6 text-primary" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-foreground">{selectedDocument.name}</h3>
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                {(selectedDocument.size / 1024).toFixed(2)} KB · {selectedDocument.uploadDate.toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => setSelectedDocument(null)}
+                                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-muted-foreground">
+                                            <path d="M18 6 6 18"></path>
+                                            <path d="m6 6 12 12"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Modal Body */}
+                            <div className="p-6 space-y-4">
+                                {/* AI Summary Section */}
+                                <div className="p-6 rounded-xl bg-gradient-to-br from-primary/10 to-cyan-500/10 border border-primary/20">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                                        <h4 className="text-sm font-semibold text-primary">Análisis con IA - Gemini</h4>
+                                    </div>
+                                    {selectedDocument.summary ? (
+                                        <p className="text-sm text-zinc-200 leading-relaxed">
+                                            {selectedDocument.summary}
+                                        </p>
+                                    ) : (
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                            <span>Generando resumen...</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Document Details */}
+                                <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
+                                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Detalles del Documento</h4>
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">Estado</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                {selectedDocument.status === 'completed' ? (
+                                                    <>
+                                                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                                                        <span className="text-green-400">Completado</span>
+                                                    </>
+                                                ) : selectedDocument.status === 'uploading' ? (
+                                                    <>
+                                                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                                                        <span className="text-blue-400">Subiendo...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <div className="w-2 h-2 rounded-full bg-red-500" />
+                                                        <span className="text-red-400">Error</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">Progreso</p>
+                                            <p className="text-foreground font-medium mt-1">{selectedDocument.progress}%</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )
+            }
+
+
+            {/* Upload Modal with Document Checklist */}
+            {uploadModalOpen.open && (
+                <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    onClick={() => setUploadModalOpen({ category: '', open: false })}
+                >
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-gradient-to-br from-slate-900 to-slate-800 border border-primary/30 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[85vh] overflow-hidden flex flex-col"
+                    >
+                        {/* Modal Header */}
+                        <div className="bg-gradient-to-r from-primary/20 to-cyan-500/20 border-b border-primary/30 p-6">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
+                                        <Upload className="w-6 h-6 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-semibold text-foreground">
+                                            {uploadModalOpen.category === 'legal' ? 'Documentos Legales' : uploadModalOpen.category === 'financial' ? 'Documentos Financieros' : 'Documentos Técnicos'}
+                                        </h3>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                            Selecciona el documento que deseas cargar
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setUploadModalOpen({ category: '', open: false })}
+                                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-muted-foreground">
+                                        <path d="M18 6 6 18"></path>
+                                        <path d="m6 6 12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Modal Body - Scrollable */}
+                        <div className="overflow-y-auto flex-1 p-6">
+                            <div className="space-y-3">
+                                {uploadModalOpen.category === 'legal' && (
+                                    <>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Certificado de existencia y representación legal</span>
+                                            </div>
+                                            <input type="file" id="upload-legal-certificado" className="hidden" accept=".pdf,.doc,.docx,.jpg,.png"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'legal')); }} />
+                                            <label htmlFor="upload-legal-certificado" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>RUT (Registro Único Tributario)</span>
+                                            </div>
+                                            <input type="file" id="upload-legal-rut" className="hidden" accept=".pdf,.doc,.docx,.jpg,.png"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'legal')); }} />
+                                            <label htmlFor="upload-legal-rut" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Cédula del representante legal</span>
+                                            </div>
+                                            <input type="file" id="upload-legal-cedula" className="hidden" accept=".pdf,.doc,.docx,.jpg,.png"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'legal')); }} />
+                                            <label htmlFor="upload-legal-cedula" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Certificado antecedentes fiscales (Contraloría)</span>
+                                            </div>
+                                            <input type="file" id="upload-legal-fiscales" className="hidden" accept=".pdf,.doc,.docx,.jpg,.png"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'legal')); }} />
+                                            <label htmlFor="upload-legal-fiscales" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Certificado antecedentes disciplinarios (Procuraduría)</span>
+                                            </div>
+                                            <input type="file" id="upload-legal-disciplinarios" className="hidden" accept=".pdf,.doc,.docx,.jpg,.png"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'legal')); }} />
+                                            <label htmlFor="upload-legal-disciplinarios" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Certificado antecedentes judiciales</span>
+                                            </div>
+                                            <input type="file" id="upload-legal-judiciales" className="hidden" accept=".pdf,.doc,.docx,.jpg,.png"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'legal')); }} />
+                                            <label htmlFor="upload-legal-judiciales" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Boletín de responsables fiscales</span>
+                                            </div>
+                                            <input type="file" id="upload-legal-boletin" className="hidden" accept=".pdf,.doc,.docx,.jpg,.png"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'legal')); }} />
+                                            <label htmlFor="upload-legal-boletin" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Certificación bancaria</span>
+                                            </div>
+                                            <input type="file" id="upload-legal-bancaria" className="hidden" accept=".pdf,.doc,.docx,.jpg,.png"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'legal')); }} />
+                                            <label htmlFor="upload-legal-bancaria" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                    </>
+                                )}
+                                {uploadModalOpen.category === 'financial' && (
+                                    <>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Balance General (últimos 3 años)</span>
+                                            </div>
+                                            <input type="file" id="upload-financial-balance" className="hidden" accept=".pdf,.xls,.xlsx"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'financial')); }} />
+                                            <label htmlFor="upload-financial-balance" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Estado de Resultados (últimos 3 años)</span>
+                                            </div>
+                                            <input type="file" id="upload-financial-resultados" className="hidden" accept=".pdf,.xls,.xlsx"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'financial')); }} />
+                                            <label htmlFor="upload-financial-resultados" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Declaración de Renta (últimas 2 vigencias)</span>
+                                            </div>
+                                            <input type="file" id="upload-financial-renta" className="hidden" accept=".pdf"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'financial')); }} />
+                                            <label htmlFor="upload-financial-renta" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Certificación de pago de aportes seguridad social</span>
+                                            </div>
+                                            <input type="file" id="upload-financial-seguridad-social" className="hidden" accept=".pdf"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'financial')); }} />
+                                            <label htmlFor="upload-financial-seguridad-social" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Indicadores financieros certificados</span>
+                                            </div>
+                                            <input type="file" id="upload-financial-indicadores" className="hidden" accept=".pdf,.xls,.xlsx"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'financial')); }} />
+                                            <label htmlFor="upload-financial-indicadores" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Certificación de capacidad de contratación (K)</span>
+                                            </div>
+                                            <input type="file" id="upload-financial-capacidad-k" className="hidden" accept=".pdf"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'financial')); }} />
+                                            <label htmlFor="upload-financial-capacidad-k" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                    </>
+                                )}
+
+                                {uploadModalOpen.category === 'technical' && (
+                                    <>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>RUP (Registro Único de Proponentes)</span>
+                                            </div>
+                                            <input type="file" id="upload-technical-rup" className="hidden" accept=".pdf"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'technical')); }} />
+                                            <label htmlFor="upload-technical-rup" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Certificados de contratos ejecutados</span>
+                                            </div>
+                                            <input type="file" id="upload-technical-contratos" className="hidden" accept=".pdf"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'technical')); }} />
+                                            <label htmlFor="upload-technical-contratos" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Actas de liquidación de contratos</span>
+                                            </div>
+                                            <input type="file" id="upload-technical-actas" className="hidden" accept=".pdf"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'technical')); }} />
+                                            <label htmlFor="upload-technical-actas" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Certificaciones de experiencia</span>
+                                            </div>
+                                            <input type="file" id="upload-technical-experiencia" className="hidden" accept=".pdf"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'technical')); }} />
+                                            <label htmlFor="upload-technical-experiencia" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Licencias y permisos profesionales</span>
+                                            </div>
+                                            <input type="file" id="upload-technical-licencias" className="hidden" accept=".pdf"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'technical')); }} />
+                                            <label htmlFor="upload-technical-licencias" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Portafolio de proyectos/servicios</span>
+                                            </div>
+                                            <input type="file" id="upload-technical-portafolio" className="hidden" accept=".pdf,.ppt,.pptx"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'technical')); }} />
+                                            <label htmlFor="upload-technical-portafolio" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors">
+                                            <div className="flex items-center gap-3 text-sm text-foreground">
+                                                <div className="w-2 h-2 rounded-full bg-primary" />
+                                                <span>Certificados de personal técnico</span>
+                                            </div>
+                                            <input type="file" id="upload-technical-personal" className="hidden" accept=".pdf"
+                                                onChange={(e) => { const files = Array.from(e.target.files || []); files.forEach(file => handleFileUpload(file, 'technical')); }} />
+                                            <label htmlFor="upload-technical-personal" className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary text-sm rounded-lg cursor-pointer transition-colors">
+                                                <Upload className="w-4 h-4" /> Subir
+                                            </label>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Financial Edit Modal */}
+            {isEditingFinancial && (
                 <div
                     className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-                    onClick={() => setSelectedDocument(null)}
+                    onClick={() => setIsEditingFinancial(false)}
                 >
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         onClick={(e) => e.stopPropagation()}
-                        className="bg-gradient-to-br from-slate-900 to-slate-800 border border-primary/30 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+                        className="bg-gradient-to-br from-slate-900 to-slate-800 border border-primary/30 rounded-2xl shadow-2xl max-w-2xl w-full"
+                    >
+                        <div className="p-6 border-b border-white/10 flex items-center justify-between">
+                            <h3 className="text-xl font-semibold text-foreground flex items-center gap-2">
+                                <DollarSign className="w-5 h-5 text-primary" />
+                                Editar Indicadores Financieros
+                            </h3>
+                            <button
+                                onClick={() => setIsEditingFinancial(false)}
+                                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-muted-foreground">
+                                    <path d="M18 6 6 18"></path>
+                                    <path d="m6 6 12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <form action={async (formData) => {
+                                const indicators = {
+                                    liquidity_index: parseFloat(formData.get("liquidity_index") as string),
+                                    indebtedness_index: parseFloat(formData.get("indebtedness_index") as string) / 100,
+                                    working_capital: parseFloat(formData.get("working_capital") as string),
+                                    equity: parseFloat(formData.get("equity") as string)
+                                };
+
+                                const unspscCodes = formData.get("unspsc_codes") as string;
+                                const unspscArray = unspscCodes ? unspscCodes.split(',').map(code => code.trim()).filter(code => code) : [];
+
+                                const experienceSummary = {
+                                    total_contracts: parseInt(formData.get("total_contracts") as string) || 0,
+                                    total_value_smmlv: parseFloat(formData.get("total_value_smmlv") as string) || 0
+                                };
+
+                                const newFormData = new FormData();
+                                newFormData.append("financial_indicators", JSON.stringify(indicators));
+                                newFormData.append("unspsc_codes", JSON.stringify(unspscArray));
+                                newFormData.append("experience_summary", JSON.stringify(experienceSummary));
+
+                                const { saveFinancials } = await import("./actions");
+                                await saveFinancials(newFormData);
+                                setIsEditingFinancial(false);
+                            }} className="space-y-6">
+                                {/* Financial Indicators */}
+                                <div>
+                                    <h4 className="text-sm font-semibold text-primary mb-4">Indicadores Financieros</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-zinc-400">Índice de Liquidez</label>
+                                            <input
+                                                name="liquidity_index"
+                                                type="number"
+                                                step="0.01"
+                                                defaultValue={company?.financial_indicators?.liquidity_index}
+                                                className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-zinc-400">Nivel de Endeudamiento (%)</label>
+                                            <input
+                                                name="indebtedness_index"
+                                                type="number"
+                                                step="0.1"
+                                                defaultValue={company?.financial_indicators?.indebtedness_index ? (company.financial_indicators.indebtedness_index * 100).toFixed(1) : ""}
+                                                className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                placeholder="0.0"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-zinc-400">Capital de Trabajo</label>
+                                            <input
+                                                name="working_capital"
+                                                type="number"
+                                                defaultValue={company?.financial_indicators?.working_capital}
+                                                className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-zinc-400">Patrimonio</label>
+                                            <input
+                                                name="equity"
+                                                type="number"
+                                                defaultValue={company?.financial_indicators?.equity}
+                                                className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* UNSPSC Codes */}
+                                <div className="pt-4 border-t border-white/10">
+                                    <h4 className="text-sm font-semibold text-primary mb-4">Códigos UNSPSC</h4>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium text-zinc-400">Clasificador de Bienes y Servicios</label>
+                                        <input
+                                            name="unspsc_codes"
+                                            type="text"
+                                            defaultValue={company?.unspsc_codes?.join(', ')}
+                                            className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                            placeholder="Ej: 72101500, 81111500, 93141600 (separados por comas)"
+                                        />
+                                        <p className="text-xs text-muted-foreground">Ingresa los códigos UNSPSC separados por comas</p>
+                                    </div>
+                                </div>
+
+                                {/* Experience Summary */}
+                                <div className="pt-4 border-t border-white/10">
+                                    <h4 className="text-sm font-semibold text-primary mb-4">Resumen de Experiencia</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-zinc-400">Total Contratos Ejecutados</label>
+                                            <input
+                                                name="total_contracts"
+                                                type="number"
+                                                defaultValue={company?.experience_summary?.total_contracts}
+                                                className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                placeholder="0"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-zinc-400">Valor Total (SMMLV)</label>
+                                            <input
+                                                name="total_value_smmlv"
+                                                type="number"
+                                                step="0.01"
+                                                defaultValue={company?.experience_summary?.total_value_smmlv}
+                                                className="w-full p-3 rounded-lg bg-input border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                placeholder="0.00"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsEditingFinancial(false)}
+                                        className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                                    >
+                                        Guardar Cambios
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Document List Modal */}
+            {documentModalOpen.open && (
+                <div
+                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+                    onClick={() => setDocumentModalOpen({ category: '', open: false })}
+                >
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="bg-gradient-to-br from-slate-900 to-slate-800 border border-primary/30 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto"
                     >
                         {/* Modal Header */}
-                        <div className="sticky top-0 bg-gradient-to-r from-primary/20 to-cyan-500/20 border-b border-primary/30 p-6">
+                        <div className="sticky top-0 bg-gradient-to-r from-primary/20 to-cyan-500/20 border-b border-primary/30 p-6 z-10">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
                                         <FileText className="w-6 h-6 text-primary" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-semibold text-foreground">{selectedDocument.name}</h3>
+                                        <h3 className="text-lg font-semibold text-foreground">
+                                            Documentos {documentModalOpen.category === 'legal' ? 'Legales' : documentModalOpen.category === 'financial' ? 'Financieros' : 'Técnicos'}
+                                        </h3>
                                         <p className="text-xs text-muted-foreground mt-1">
-                                            {(selectedDocument.size / 1024).toFixed(2)} KB · {selectedDocument.uploadDate.toLocaleDateString()}
+                                            {documentsByCategory[documentModalOpen.category as DocumentCategory]?.length || 0} documento(s) cargados
                                         </p>
                                     </div>
                                 </div>
                                 <button
-                                    onClick={() => setSelectedDocument(null)}
+                                    onClick={() => setDocumentModalOpen({ category: '', open: false })}
                                     className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-muted-foreground">
@@ -944,60 +1627,58 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                         </div>
 
                         {/* Modal Body */}
-                        <div className="p-6 space-y-4">
-                            {/* AI Summary Section */}
-                            <div className="p-6 rounded-xl bg-gradient-to-br from-primary/10 to-cyan-500/10 border border-primary/20">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                                    <h4 className="text-sm font-semibold text-primary">Análisis con IA - Gemini</h4>
-                                </div>
-                                {selectedDocument.summary ? (
-                                    <p className="text-sm text-zinc-200 leading-relaxed">
-                                        {selectedDocument.summary}
-                                    </p>
-                                ) : (
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                                        <span>Generando resumen...</span>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Document Details */}
-                            <div className="p-4 rounded-xl bg-white/5 border border-white/10 space-y-2">
-                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Detalles del Documento</h4>
-                                <div className="grid grid-cols-2 gap-3 text-sm">
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Estado</p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            {selectedDocument.status === 'completed' ? (
-                                                <>
-                                                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                                                    <span className="text-green-400">Completado</span>
-                                                </>
-                                            ) : selectedDocument.status === 'uploading' ? (
-                                                <>
-                                                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                                                    <span className="text-blue-400">Subiendo...</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <div className="w-2 h-2 rounded-full bg-red-500" />
-                                                    <span className="text-red-400">Error</span>
-                                                </>
-                                            )}
+                        <div className="p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {documentsByCategory[documentModalOpen.category as DocumentCategory]?.map((file) => (
+                                    <motion.div
+                                        key={file.id}
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="p-4 rounded-lg bg-white/5 border border-white/10 hover:border-primary/30 transition-colors"
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex items-start gap-3 flex-1 min-w-0">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedDocument(file);
+                                                        setDocumentModalOpen({ category: '', open: false });
+                                                    }}
+                                                    className="hover:bg-primary/10 p-1 rounded-lg transition-colors"
+                                                >
+                                                    <FileText className="w-8 h-8 text-primary flex-shrink-0 cursor-pointer" />
+                                                </button>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
+                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                        {(file.size / 1024).toFixed(2)} KB
+                                                    </p>
+                                                    {file.summary && (
+                                                        <div className="mt-2 p-3 bg-primary/5 rounded-lg border border-primary/10">
+                                                            <div className="flex items-center gap-2 mb-1">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                                                                <span className="text-xs font-medium text-primary">Análisis IA</span>
+                                                            </div>
+                                                            <p className="text-xs text-zinc-300 leading-relaxed line-clamp-3">
+                                                                {file.summary}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => handleRemoveFile(documentModalOpen.category as DocumentCategory, file.id)}
+                                                className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group"
+                                            >
+                                                <Trash2 className="w-4 h-4 text-muted-foreground group-hover:text-red-500" />
+                                            </button>
                                         </div>
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-muted-foreground">Progreso</p>
-                                        <p className="text-foreground font-medium mt-1">{selectedDocument.progress}%</p>
-                                    </div>
-                                </div>
+                                    </motion.div>
+                                ))}
                             </div>
                         </div>
                     </motion.div>
                 </div>
             )}
-        </div>
+        </div >
     );
 }

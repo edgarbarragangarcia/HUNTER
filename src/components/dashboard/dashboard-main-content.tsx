@@ -9,7 +9,7 @@ export function DashboardMainContent({ children }: { children: React.ReactNode }
     return (
         <div
             className={cn(
-                "flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out",
+                "flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out overflow-x-hidden",
                 isCollapsed ? "lg:ml-[80px]" : "lg:ml-64"
             )}
         >

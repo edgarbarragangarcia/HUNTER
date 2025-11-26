@@ -55,6 +55,9 @@ create table public.companies (
   city text,
   department text,
   country text default 'Colombia',
+  unspsc_codes jsonb, -- Array of UNSPSC codes
+  financial_indicators jsonb, -- Financial metrics
+  experience_summary jsonb, -- Experience summary
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
