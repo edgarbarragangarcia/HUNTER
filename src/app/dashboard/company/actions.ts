@@ -80,7 +80,7 @@ if (typeof DOMMatrix === 'undefined') {
 }
 const pdf = require('pdf-parse');
 
-export async function generateDocumentSummary(fileBase64: string | null, mimeType: string, category: string, storagePath?: string) {
+export async function generateDocumentSummary(fileBase64: string | null, mimeType: string, category: string, storagePath?: string, dbId?: string) {
     try {
         let processingBase64 = fileBase64;
 
@@ -94,7 +94,7 @@ export async function generateDocumentSummary(fileBase64: string | null, mimeTyp
 
             if (error || !data) {
                 console.error("Error downloading from storage:", error);
-                return { summary: "Error al recuperar el documento del almacenamiento." };
+                return { summary: "Error al recuperar el documento del almacenamiento.", summaryType: 'excerpt' };
             }
 
             // Convert Blob/File to Buffer then Base64
@@ -104,17 +104,16 @@ export async function generateDocumentSummary(fileBase64: string | null, mimeTyp
         }
 
         if (!processingBase64) {
-            return { summary: "No se pudo procesar el contenido del documento." };
+            return { summary: "No se pudo procesar el contenido del documento.", summaryType: 'excerpt' };
         }
 
         const apiKey = process.env.GEMINI_API_KEY;
         console.log("DEBUG: API Key present?", !!apiKey);
 
-        // 1. Try Gemini 1.5 Flash (Native PDF/Image Support) - Best option
+        // 1. Try Gemini 2.5 Flash Lite (Native PDF/Image Support) - Best option
         if (apiKey) {
             try {
                 const genAI = new GoogleGenerativeAI(apiKey);
-                // Use Gemini 2.5 Flash Lite which is available for this key
                 const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
                 let prompt = "";
@@ -132,7 +131,6 @@ export async function generateDocumentSummary(fileBase64: string | null, mimeTyp
                         prompt = "Resume este documento en español en máximo 40 palabras, destacando la información más relevante.";
                 }
 
-                // Send the file directly to Gemini
                 const result = await model.generateContent([
                     prompt,
                     {
@@ -148,6 +146,16 @@ export async function generateDocumentSummary(fileBase64: string | null, mimeTyp
 
                 if (summary && summary.trim().length > 0) {
                     console.log("✅ AI Summary generated successfully with Gemini 2.5 Flash Lite");
+
+                    // Save summary to database metadata if dbId is provided
+                    if (dbId) {
+                        const supabase = await createClient();
+                        await supabase
+                            .from('company_documents')
+                            .update({ metadata: { summary: summary.trim() } })
+                            .eq('id', dbId);
+                    }
+
                     return { summary: summary.trim(), summaryType: 'ai' };
                 }
             } catch (aiError) {
@@ -158,7 +166,6 @@ export async function generateDocumentSummary(fileBase64: string | null, mimeTyp
         }
 
         // 2. Fallback: Local Text Extraction (if AI fails or no key)
-        // Only for PDFs as we can't easily extract text from images locally
         if (mimeType === "application/pdf" && processingBase64) {
             try {
                 const buffer = Buffer.from(processingBase64, 'base64');
@@ -177,6 +184,15 @@ export async function generateDocumentSummary(fileBase64: string | null, mimeTyp
                         ? cleanText.slice(0, 150) + '...'
                         : cleanText;
 
+                    // Save fallback summary to database metadata
+                    if (dbId) {
+                        const supabase = await createClient();
+                        await supabase
+                            .from('company_documents')
+                            .update({ metadata: { summary: preview } })
+                            .eq('id', dbId);
+                    }
+
                     return {
                         summary: preview,
                         summaryType: 'excerpt'
@@ -187,9 +203,19 @@ export async function generateDocumentSummary(fileBase64: string | null, mimeTyp
             }
         }
 
-        // 3. Final Fallback if everything fails
+        // 3. Final Fallback
+        const fallbackSummary = "Documento recibido. El contenido será analizado por nuestro equipo.";
+
+        if (dbId) {
+            const supabase = await createClient();
+            await supabase
+                .from('company_documents')
+                .update({ metadata: { summary: fallbackSummary } })
+                .eq('id', dbId);
+        }
+
         return {
-            summary: "Documento recibido. El contenido será analizado por nuestro equipo.",
+            summary: fallbackSummary,
             summaryType: 'excerpt'
         };
 
@@ -218,12 +244,33 @@ export async function uploadCompanyDocument(formData: FormData) {
         throw new Error("Faltan datos requeridos (archivo o categoría)");
     }
 
-    // 2. Define path: user_id/category/filename
+    // 2. Get user's profile and company
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+    if (!profile) {
+        throw new Error("Perfil no encontrado");
+    }
+
+    const { data: company } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('profile_id', profile.id)
+        .single();
+
+    if (!company) {
+        throw new Error("Empresa no encontrada. Por favor completa primero la información de tu empresa.");
+    }
+
+    // 3. Define path: user_id/category/filename
     // Sanitize filename to avoid issues
     const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const filePath = `${user.id}/${category}/${Date.now()}_${sanitizedName}`;
 
-    // 3. Upload to Supabase Storage
+    // 4. Upload to Supabase Storage
     const { data, error } = await supabase
         .storage
         .from('company-documents')
@@ -237,18 +284,40 @@ export async function uploadCompanyDocument(formData: FormData) {
         throw new Error(`Error al subir archivo: ${error.message}`);
     }
 
-    // 4. Get Public URL
+    // 5. Get Public URL
     const { data: { publicUrl } } = supabase
         .storage
         .from('company-documents')
         .getPublicUrl(filePath);
+
+    // 6. Save metadata to database using correct schema
+    const { data: dbRecord, error: dbError } = await supabase
+        .from('company_documents')
+        .insert({
+            company_id: company.id,
+            document_type: category, // 'legal', 'financial', 'technical'
+            document_name: file.name,
+            file_url: publicUrl,
+            file_size: file.size,
+            mime_type: file.type,
+            uploaded_by: profile.id,
+            metadata: {} // Will be updated with summary after AI generation
+        })
+        .select()
+        .single();
+
+    if (dbError) {
+        console.error("Error saving to database:", dbError);
+        throw new Error(`Error al guardar en base de datos: ${dbError.message}`);
+    }
 
     return {
         success: true,
         url: publicUrl,
         path: filePath,
         name: file.name,
-        size: file.size
+        size: file.size,
+        dbId: dbRecord?.id // Return DB ID for later summary update
     };
 }
 
@@ -258,39 +327,60 @@ export async function listCompanyDocuments() {
 
     if (!user) return { legal: [], financial: [], technical: [] };
 
-    // List all files in the bucket for this user
-    // Since our structure is userId/category/filename, we can list recursively or by folder
-    // But list() is not recursive by default. We need to list for each category.
+    // Get user's profile and company
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
 
-    const categories = ['legal', 'financial', 'technical'];
+    if (!profile) {
+        console.warn("No profile found for user");
+        return { legal: [], financial: [], technical: [] };
+    }
+
+    const { data: company } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('profile_id', profile.id)
+        .single();
+
+    if (!company) {
+        console.warn("No company found for profile");
+        return { legal: [], financial: [], technical: [] };
+    }
+
+    // Query database for company's documents using correct schema
+    const { data: documents, error } = await supabase
+        .from('company_documents')
+        .select('*')
+        .eq('company_id', company.id)
+        .order('uploaded_at', { ascending: false });
+
+    if (error) {
+        console.error("Error fetching documents:", error);
+        return { legal: [], financial: [], technical: [] };
+    }
+
+    // Group by category
     const results: Record<string, any[]> = { legal: [], financial: [], technical: [] };
 
-    for (const category of categories) {
-        const { data, error } = await supabase
-            .storage
-            .from('company-documents')
-            .list(`${user.id}/${category}`);
-
-        if (data) {
-            results[category] = data.map(file => {
-                const { data: { publicUrl } } = supabase
-                    .storage
-                    .from('company-documents')
-                    .getPublicUrl(`${user.id}/${category}/${file.name}`);
-
-                return {
-                    id: file.id,
-                    name: file.name.split('_').slice(1).join('_'), // Remove timestamp prefix
-                    size: file.metadata?.size || 0,
-                    uploadDate: new Date(file.created_at),
-                    status: 'completed',
-                    progress: 100,
-                    url: publicUrl,
-                    summary: "Documento cargado previamente." // Placeholder as we don't store summary in storage metadata yet
-                };
+    if (documents) {
+        documents.forEach(doc => {
+            // Use file_url directly from the database (it's already the public URL)
+            results[doc.document_type]?.push({
+                id: doc.id,
+                name: doc.document_name,
+                size: doc.file_size,
+                uploadDate: new Date(doc.uploaded_at),
+                status: 'completed',
+                progress: 100,
+                url: doc.file_url,
+                summary: doc.metadata?.summary || "Procesando..."
             });
-        }
+        });
     }
 
     return results;
 }
+
