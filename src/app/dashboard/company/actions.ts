@@ -133,9 +133,14 @@ export async function saveFinancials(formData: FormData) {
 
         if (error) throw new Error(error.message);
     } else {
-        // Should not happen in this context, but handle creation if needed
-        // For now, assume company exists or use saveCompanyInfo for creation
-        throw new Error("Company profile must exist before saving financials");
+        // Create new company with financial data
+        financialData.profile_id = profile.id;
+
+        const { error } = await supabase
+            .from("companies")
+            .insert(financialData);
+
+        if (error) throw new Error(error.message);
     }
 
     revalidatePath("/dashboard/company");
