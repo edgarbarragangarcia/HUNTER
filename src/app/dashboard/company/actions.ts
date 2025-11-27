@@ -133,14 +133,8 @@ export async function saveFinancials(formData: FormData) {
 
         if (error) throw new Error(error.message);
     } else {
-        // Create new company with financial data
-        financialData.profile_id = profile.id;
-
-        const { error } = await supabase
-            .from("companies")
-            .insert(financialData);
-
-        if (error) throw new Error(error.message);
+        // Company profile must exist with basic info before saving financial data
+        throw new Error("Debes completar primero la información básica de tu empresa (Nombre, NIT, Representante Legal) antes de guardar los indicadores financieros.");
     }
 
     revalidatePath("/dashboard/company");

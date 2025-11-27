@@ -1467,9 +1467,13 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                 newFormData.append("unspsc_codes", JSON.stringify(unspscArray));
                                 newFormData.append("experience_summary", JSON.stringify(experienceSummary));
 
-                                const { saveFinancials } = await import("./actions");
-                                await saveFinancials(newFormData);
-                                setIsEditingFinancial(false);
+                                try {
+                                    const { saveFinancials } = await import("./actions");
+                                    await saveFinancials(newFormData);
+                                    setIsEditingFinancial(false);
+                                } catch (error: any) {
+                                    alert(error.message || "Error al guardar los indicadores financieros");
+                                }
                             }} className="space-y-6">
                                 {/* Financial Indicators */}
                                 <div>
