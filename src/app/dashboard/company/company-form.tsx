@@ -1,10 +1,13 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Upload, FileText, DollarSign, ShieldCheck, Plus, Building2, Edit2, Check, LayoutGrid, ArrowRight, Trash2, Camera } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Upload, FileText, DollarSign, ShieldCheck, Plus, Building2, Edit2, Check, LayoutGrid, ArrowRight, Trash2, Camera, X, Sparkles, Download } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { saveCompanyInfo, generateDocumentSummary, uploadCompanyDocument, listCompanyDocuments, deleteCompanyDocument, saveContract, listCompanyContracts, deleteContract } from "./actions";
+import { saveCompanyInfo, generateDocumentSummary, uploadCompanyDocument, listCompanyDocuments, deleteCompanyDocument, saveContract, listCompanyContracts, deleteContract, generateCompanyAnalysis } from "./actions";
+import ReactMarkdown from 'react-markdown';
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 import { testDatabaseConnection } from "./test-db";
 import { DocumentUpload, UploadedFile } from "./document-upload";
 
@@ -48,6 +51,10 @@ export default function CompanyForm({ company }: CompanyFormProps) {
     const [isEditingInfo, setIsEditingInfo] = useState(false);
     const [contracts, setContracts] = useState<Contract[]>([]);
     const [isAddingContract, setIsAddingContract] = useState(false);
+    const [isViewingFullDetails, setIsViewingFullDetails] = useState(false);
+    const [analysisReport, setAnalysisReport] = useState<string | null>(null);
+    const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+    const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
 
     // Estado separado para documentos por categoría
     const [documentsByCategory, setDocumentsByCategory] = useState<Record<DocumentCategory, UploadedFile[]>>({
@@ -55,6 +62,46 @@ export default function CompanyForm({ company }: CompanyFormProps) {
         financial: [],
         technical: []
     });
+
+    const handleGenerateReport = async () => {
+        try {
+            setIsGeneratingReport(true);
+            const report = await generateCompanyAnalysis();
+            setAnalysisReport(report);
+            setIsAnalysisModalOpen(true);
+        } catch (error) {
+            console.error("Error generating report:", error);
+            alert("Error al generar el informe. Por favor intenta de nuevo.");
+        } finally {
+            setIsGeneratingReport(false);
+        }
+    };
+
+    const handleDownloadPDF = async () => {
+        const element = document.getElementById('report-content');
+        if (!element) return;
+
+        try {
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                backgroundColor: '#1e293b', // Match modal background
+                logging: false
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width, canvas.height]
+            });
+
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            pdf.save(`Informe_Analisis_${company?.company_name || 'Empresa'}.pdf`);
+        } catch (error) {
+            console.error("Error downloading PDF:", error);
+            alert("Error al descargar el PDF.");
+        }
+    };
 
     useEffect(() => {
         const loadDocuments = async () => {
@@ -411,47 +458,49 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            {/* Company Info Summary Card */}
-                            <div className="p-4 rounded-2xl card-gradient card-shimmer shadow-glow">
-                                <div className="border-2 border-dashed border-white/20 rounded-xl p-4">
-                                    <div className="flex items-center justify-between mb-3">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center">
-                                                <Building2 className="w-4 h-4 text-primary" />
-                                            </div>
-                                            <h3 className="text-lg font-semibold text-foreground">Información de la Empresa</h3>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            {company && (
-                                                <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-primary/10 border border-primary/30">
-                                                    <Check className="w-3 h-3 text-primary" />
-                                                    <span className="text-xs text-primary font-medium">Completado</span>
-                                                </div>
-                                            )}
-                                            <button
-                                                onClick={() => {
-                                                    setActiveTab("info");
-                                                    setIsEditing(true);
-                                                }}
-                                                className="p-1.5 hover:bg-white/10 text-primary rounded-lg transition-colors"
-                                                title="Editar Información"
-                                            >
-                                                <Edit2 className="w-4 h-4" />
-                                            </button>
-                                            {documentsByCategory.legal.length > 0 && (
-                                                <button
-                                                    onClick={() => setDocumentModalOpen({ category: 'legal', open: true })}
-                                                    className="p-1.5 hover:bg-white/10 text-primary rounded-lg transition-colors"
-                                                    title="Ver Documentos"
-                                                >
-                                                    <FileText className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-
+                            <div className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h3 className="text-xl font-semibold text-foreground">Empresas Registradas</h3>
 
                                 </div>
+
+                                {company ? (
+                                    <div className="space-y-4">
+                                        <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
+                                                    <Building2 className="w-6 h-6 text-primary" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-semibold text-foreground text-lg">{company.company_name}</h4>
+                                                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                                        <span>NIT: {company.nit || 'No registrado'}</span>
+                                                        <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                                                        <span>{company.city || 'Ciudad no registrada'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <button
+                                                onClick={() => setIsViewingFullDetails(true)}
+                                                className="w-10 h-10 rounded-full bg-primary hover:bg-primary/90 text-white flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
+                                                title="Ver Detalles Completos"
+                                            >
+                                                <FileText className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12 border-2 border-dashed border-white/10 rounded-xl">
+                                        <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
+                                            <Building2 className="w-8 h-8 text-muted-foreground" />
+                                        </div>
+                                        <h4 className="text-lg font-medium text-foreground mb-2">No hay empresas registradas</h4>
+                                        <p className="text-muted-foreground max-w-md mx-auto">
+                                            Registra tu empresa para comenzar a gestionar tus documentos y analizar licitaciones.
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         </motion.div>
                     )}
@@ -513,18 +562,18 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => setUploadModalOpen({ category: 'legal', open: true })}
-                                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors"
+                                                className="w-12 h-12 rounded-full bg-primary hover:bg-primary/90 text-white flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
+                                                title="Cargar Documentos"
                                             >
-                                                <Upload className="w-4 h-4" />
-                                                Cargar Documentos
+                                                <Upload className="w-5 h-5" />
                                             </button>
                                             {documentsByCategory.legal.length > 0 && (
                                                 <button
                                                     onClick={() => setDocumentModalOpen({ category: 'legal', open: true })}
-                                                    className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-foreground rounded-lg transition-colors border border-white/20"
+                                                    className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-foreground flex items-center justify-center transition-colors border border-white/20 shadow-lg hover:shadow-xl"
+                                                    title="Ver Documentos"
                                                 >
-                                                    <FileText className="w-4 h-4" />
-                                                    Ver Documentos
+                                                    <FileText className="w-5 h-5" />
                                                 </button>
                                             )}
 
@@ -611,18 +660,18 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => setUploadModalOpen({ category: 'financial', open: true })}
-                                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors"
+                                                className="w-12 h-12 rounded-full bg-primary hover:bg-primary/90 text-white flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
+                                                title="Cargar Documentos"
                                             >
-                                                <Upload className="w-4 h-4" />
-                                                Cargar Documentos
+                                                <Upload className="w-5 h-5" />
                                             </button>
                                             {documentsByCategory.financial.length > 0 && (
                                                 <button
                                                     onClick={() => setDocumentModalOpen({ category: 'financial', open: true })}
-                                                    className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-foreground rounded-lg transition-colors border border-white/20"
+                                                    className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-foreground flex items-center justify-center transition-colors border border-white/20 shadow-lg hover:shadow-xl"
+                                                    title="Ver Documentos"
                                                 >
-                                                    <FileText className="w-4 h-4" />
-                                                    Ver Documentos
+                                                    <FileText className="w-5 h-5" />
                                                 </button>
                                             )}
 
@@ -689,9 +738,9 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-4 rounded-2xl card-gradient card-shimmer shadow-glow">
-                                <div className="border-2 border-dashed border-white/20 rounded-xl p-4">
-                                    <div className="mb-4">
+                            <div className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow">
+                                <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
+                                    <div className="mb-6">
                                         <h3 className="text-xl font-semibold text-foreground">Capacidad de Contratación</h3>
                                         <p className="text-sm text-muted-foreground mt-1">
                                             Información extraída automáticamente de tus documentos para el análisis de licitaciones.
@@ -707,99 +756,24 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                         <div className="flex items-center gap-2">
                                             <button
                                                 onClick={() => setIsEditingFinancial(true)}
-                                                className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors"
+                                                className="w-12 h-12 rounded-full bg-primary hover:bg-primary/90 text-white flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
+                                                title="Editar Indicadores"
                                             >
-                                                <Edit2 className="w-4 h-4" />
-                                                Editar Indicadores
+                                                <Edit2 className="w-5 h-5" />
                                             </button>
                                             {documentsByCategory.financial.length > 0 && (
                                                 <button
                                                     onClick={() => setDocumentModalOpen({ category: 'financial', open: true })}
-                                                    className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-foreground rounded-lg transition-colors border border-white/20"
+                                                    className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-foreground flex items-center justify-center transition-colors border border-white/20 shadow-lg hover:shadow-xl"
+                                                    title="Ver Documentos"
                                                 >
-                                                    <FileText className="w-4 h-4" />
-                                                    Ver Documentos
+                                                    <FileText className="w-5 h-5" />
                                                 </button>
                                             )}
                                         </div>
                                     </div>
 
-                                    {/* Financial Indicators */}
-                                    <div className="mb-4">
-                                        <h4 className="text-sm font-medium text-primary mb-4 flex items-center gap-2">
-                                            <DollarSign className="w-4 h-4" />
-                                            Indicadores Financieros
-                                        </h4>
-                                        {company?.financial_indicators ? (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                                <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                                                    <p className="text-xs text-muted-foreground mb-1">Índice de Liquidez</p>
-                                                    <p className="text-2xl font-bold text-foreground">
-                                                        {company.financial_indicators.liquidity_index || "N/A"}
-                                                    </p>
-                                                </div>
-                                                <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                                                    <p className="text-xs text-muted-foreground mb-1">Nivel de Endeudamiento</p>
-                                                    <p className="text-2xl font-bold text-foreground">
-                                                        {company.financial_indicators.indebtedness_index ? `${(company.financial_indicators.indebtedness_index * 100).toFixed(1)}%` : "N/A"}
-                                                    </p>
-                                                </div>
-                                                <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                                                    <p className="text-xs text-muted-foreground mb-1">Capital de Trabajo</p>
-                                                    <p className="text-2xl font-bold text-foreground">
-                                                        {company.financial_indicators.working_capital ? `$${company.financial_indicators.working_capital.toLocaleString()}` : "N/A"}
-                                                    </p>
-                                                </div>
-                                                <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                                                    <p className="text-xs text-muted-foreground mb-1">Patrimonio</p>
-                                                    <p className="text-2xl font-bold text-foreground">
-                                                        {company.financial_indicators.equity ? `$${company.financial_indicators.equity.toLocaleString()}` : "N/A"}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ) : null}
-                                    </div>
 
-                                    {/* UNSPSC Codes */}
-                                    <div className="mb-4">
-                                        <h4 className="text-sm font-medium text-primary mb-4 flex items-center gap-2">
-                                            <LayoutGrid className="w-4 h-4" />
-                                            Códigos UNSPSC (Clasificador de Bienes y Servicios)
-                                        </h4>
-                                        {company?.unspsc_codes && company.unspsc_codes.length > 0 ? (
-                                            <div className="flex flex-wrap gap-2">
-                                                {company.unspsc_codes.map((code: string, index: number) => (
-                                                    <span key={index} className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
-                                                        {code}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        ) : null}
-                                    </div>
-
-                                    {/* Experience Summary */}
-                                    <div>
-                                        <h4 className="text-sm font-medium text-primary mb-4 flex items-center gap-2">
-                                            <FileText className="w-4 h-4" />
-                                            Resumen de Experiencia
-                                        </h4>
-                                        {company?.experience_summary ? (
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                                                    <p className="text-xs text-muted-foreground mb-1">Total Contratos Ejecutados</p>
-                                                    <p className="text-2xl font-bold text-foreground">
-                                                        {company.experience_summary.total_contracts || 0}
-                                                    </p>
-                                                </div>
-                                                <div className="p-4 rounded-lg bg-white/5 border border-white/10">
-                                                    <p className="text-xs text-muted-foreground mb-1">Valor Total (SMMLV)</p>
-                                                    <p className="text-2xl font-bold text-foreground">
-                                                        {company.experience_summary.total_value_smmlv ? company.experience_summary.total_value_smmlv.toLocaleString() : 0}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ) : null}
-                                    </div>
                                 </div>
                             </div>
                         </motion.div>
@@ -831,18 +805,18 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => setUploadModalOpen({ category: 'technical', open: true })}
-                                                className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors"
+                                                className="w-12 h-12 rounded-full bg-primary hover:bg-primary/90 text-white flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
+                                                title="Cargar Documentos"
                                             >
-                                                <Upload className="w-4 h-4" />
-                                                Cargar Documentos
+                                                <Upload className="w-5 h-5" />
                                             </button>
                                             {documentsByCategory.technical.length > 0 && (
                                                 <button
                                                     onClick={() => setDocumentModalOpen({ category: 'technical', open: true })}
-                                                    className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-foreground rounded-lg transition-colors border border-white/20"
+                                                    className="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-foreground flex items-center justify-center transition-colors border border-white/20 shadow-lg hover:shadow-xl"
+                                                    title="Ver Documentos"
                                                 >
-                                                    <FileText className="w-4 h-4" />
-                                                    Ver Documentos
+                                                    <FileText className="w-5 h-5" />
                                                 </button>
                                             )}
 
@@ -1907,6 +1881,276 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                     </motion.div>
                 </div>
             )}
-        </div >
+            {/* Full Details Modal */}
+            <AnimatePresence>
+                {isViewingFullDetails && company && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                        onClick={() => setIsViewingFullDetails(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-gradient-to-br from-slate-900 to-slate-800 border border-primary/30 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col"
+                        >
+                            <div className="p-6 border-b border-white/10 flex items-center justify-between flex-shrink-0">
+                                <h3 className="text-primary text-xl font-semibold flex items-center gap-2">
+                                    <Building2 className="w-6 h-6 text-primary" />
+                                    Detalles de la Empresa
+                                </h3>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={handleGenerateReport}
+                                        disabled={isGeneratingReport}
+                                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                        title="Generar Informe Gerencial IA"
+                                    >
+                                        {isGeneratingReport ? (
+                                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        ) : (
+                                            <Sparkles className="w-4 h-4" />
+                                        )}
+                                        Generar Informe IA
+                                    </button>
+                                    <button
+                                        onClick={() => setIsViewingFullDetails(false)}
+                                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                    >
+                                        <X className="w-5 h-5 text-slate-400 hover:text-white transition-colors" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="p-8 overflow-y-auto flex-1 space-y-8">
+                                {/* Información General */}
+                                <section>
+                                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                                            <Building2 className="w-4 h-4 text-primary" />
+                                        </div>
+                                        Información General
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 rounded-xl bg-white/5 border border-white/10">
+                                        <div>
+                                            <label className="text-xs text-slate-400 block mb-1">Nombre de la Empresa</label>
+                                            <p className="text-white font-medium">{company.company_name}</p>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-slate-400 block mb-1">NIT</label>
+                                            <p className="text-white font-medium">{company.nit}</p>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-slate-400 block mb-1">Representante Legal</label>
+                                            <p className="text-white font-medium">{company.legal_representative || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-slate-400 block mb-1">Sector Económico</label>
+                                            <p className="text-white font-medium">{company.economic_sector || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-slate-400 block mb-1">Teléfono</label>
+                                            <p className="text-white font-medium">{company.phone || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-slate-400 block mb-1">Dirección</label>
+                                            <p className="text-white font-medium">{company.address || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-slate-400 block mb-1">Ciudad</label>
+                                            <p className="text-white font-medium">{company.city || 'N/A'}</p>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-slate-400 block mb-1">Departamento</label>
+                                            <p className="text-white font-medium">{company.department || 'N/A'}</p>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* Indicadores Financieros */}
+                                <section>
+                                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                                            <DollarSign className="w-4 h-4 text-primary" />
+                                        </div>
+                                        Indicadores Financieros
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                        <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                                            <p className="text-xs text-slate-400 mb-1">Índice de Liquidez</p>
+                                            <p className="text-xl font-bold text-white">
+                                                {company.financial_indicators?.liquidity_index || "N/A"}
+                                            </p>
+                                        </div>
+                                        <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                                            <p className="text-xs text-slate-400 mb-1">Nivel de Endeudamiento</p>
+                                            <p className="text-xl font-bold text-white">
+                                                {company.financial_indicators?.indebtedness_index ? `${(company.financial_indicators.indebtedness_index * 100).toFixed(1)}%` : "N/A"}
+                                            </p>
+                                        </div>
+                                        <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                                            <p className="text-xs text-slate-400 mb-1">Capital de Trabajo</p>
+                                            <p className="text-xl font-bold text-white">
+                                                {company.financial_indicators?.working_capital ? `$${company.financial_indicators.working_capital.toLocaleString()}` : "N/A"}
+                                            </p>
+                                        </div>
+                                        <div className="p-4 rounded-lg bg-white/5 border border-white/10">
+                                            <p className="text-xs text-slate-400 mb-1">Patrimonio</p>
+                                            <p className="text-xl font-bold text-white">
+                                                {company.financial_indicators?.equity ? `$${company.financial_indicators.equity.toLocaleString()}` : "N/A"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                {/* Experiencia Técnica (Contratos) */}
+                                <section>
+                                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                                            <FileText className="w-4 h-4 text-primary" />
+                                        </div>
+                                        Experiencia Técnica
+                                    </h4>
+                                    {contracts.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {contracts.map((contract, index) => (
+                                                <div key={index} className="p-4 rounded-xl bg-white/5 border border-white/10">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <h5 className="font-medium text-white">{contract.description || 'Contrato sin descripción'}</h5>
+                                                        <span className="text-xs px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                                                            {contract.contract_number}
+                                                        </span>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4 text-sm">
+                                                        <div>
+                                                            <span className="text-slate-400 block text-xs">Cliente</span>
+                                                            <span className="text-white">{contract.client_name}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-slate-400 block text-xs">Valor</span>
+                                                            <span className="text-white">${contract.contract_value.toLocaleString()}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-slate-400 block text-xs">Fecha Ejecución</span>
+                                                            <span className="text-white">{contract.execution_date ? new Date(contract.execution_date).toLocaleDateString() : 'N/A'}</span>
+                                                        </div>
+                                                        <div>
+                                                            <span className="text-slate-400 block text-xs">Valor SMMLV</span>
+                                                            <span className="text-white">{contract.contract_value_smmlv?.toFixed(2) || 'N/A'}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-muted-foreground text-sm italic">No hay contratos registrados.</p>
+                                    )}
+                                </section>
+
+                                {/* Documentos */}
+                                <section>
+                                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                                            <FileText className="w-4 h-4 text-primary" />
+                                        </div>
+                                        Documentos Cargados
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                                            <h5 className="font-medium text-white mb-2">Legales</h5>
+                                            <p className="text-3xl font-bold text-primary">{documentsByCategory.legal.length}</p>
+                                            <p className="text-xs text-slate-400">Documentos</p>
+                                        </div>
+                                        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                                            <h5 className="font-medium text-white mb-2">Financieros</h5>
+                                            <p className="text-3xl font-bold text-primary">{documentsByCategory.financial.length}</p>
+                                            <p className="text-xs text-slate-400">Documentos</p>
+                                        </div>
+                                        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                                            <h5 className="font-medium text-white mb-2">Técnicos</h5>
+                                            <p className="text-3xl font-bold text-primary">{documentsByCategory.technical.length}</p>
+                                            <p className="text-xs text-slate-400">Documentos</p>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                            <div className="p-6 border-t border-white/10 flex justify-end">
+                                <button
+                                    onClick={() => setIsViewingFullDetails(false)}
+                                    className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Analysis Report Modal */}
+            <AnimatePresence>
+                {isAnalysisModalOpen && analysisReport && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                        onClick={() => setIsAnalysisModalOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="bg-slate-900 border border-white/10 rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col"
+                        >
+                            <div className="p-6 border-b border-white/10 flex items-center justify-between flex-shrink-0">
+                                <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+                                    <Sparkles className="w-6 h-6 text-indigo-400" />
+                                    Informe Gerencial IA
+                                </h3>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={handleDownloadPDF}
+                                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors text-sm font-medium"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Descargar PDF
+                                    </button>
+                                    <button
+                                        onClick={() => setIsAnalysisModalOpen(false)}
+                                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                    >
+                                        <X className="w-5 h-5 text-slate-400 hover:text-white" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div className="p-8 overflow-y-auto flex-1 bg-slate-900" id="report-content">
+                                <div className="text-slate-300 space-y-4 max-w-none">
+                                    <ReactMarkdown
+                                        components={{
+                                            h1: ({ node, ...props }) => <h1 className="text-3xl font-bold text-indigo-300 mb-4 mt-6" {...props} />,
+                                            h2: ({ node, ...props }) => <h2 className="text-2xl font-semibold text-indigo-300 mb-3 mt-5" {...props} />,
+                                            h3: ({ node, ...props }) => <h3 className="text-xl font-semibold text-indigo-300 mb-2 mt-4" {...props} />,
+                                            p: ({ node, ...props }) => <p className="text-slate-300 leading-relaxed mb-4" {...props} />,
+                                            ul: ({ node, ...props }) => <ul className="list-disc list-inside text-slate-300 space-y-2 mb-4" {...props} />,
+                                            ol: ({ node, ...props }) => <ol className="list-decimal list-inside text-slate-300 space-y-2 mb-4" {...props} />,
+                                            li: ({ node, ...props }) => <li className="text-slate-300" {...props} />,
+                                            strong: ({ node, ...props }) => <strong className="font-bold text-white" {...props} />,
+                                            em: ({ node, ...props }) => <em className="italic text-slate-200" {...props} />,
+                                        }}
+                                    >
+                                        {analysisReport}
+                                    </ReactMarkdown>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
     );
 }

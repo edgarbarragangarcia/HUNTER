@@ -750,3 +750,158 @@ export async function deleteCompanyDocument(documentId: string) {
 
     return { success: true };
 }
+
+// ==================== AI COMPANY ANALYSIS ====================
+
+export async function generateCompanyAnalysis() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) throw new Error("Usuario no autenticado");
+
+    // 1. Fetch Company Data
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', user.id)
+        .single();
+
+    if (!profile) throw new Error("Perfil no encontrado");
+
+    const { data: company } = await supabase
+        .from('companies')
+        .select('*')
+        .eq('profile_id', profile.id)
+        .single();
+
+    if (!company) throw new Error("Empresa no encontrada");
+
+    // 2. Fetch Contracts
+    const { data: contracts } = await supabase
+        .from('company_contracts')
+        .select('*')
+        .eq('company_id', company.id);
+
+    // 3. Fetch Documents
+    const { data: documents } = await supabase
+        .from('company_documents')
+        .select('*')
+        .eq('company_id', company.id);
+
+    // 4. Process Documents (Extract Text)
+    let documentsText = "";
+    if (documents && documents.length > 0) {
+        console.log(`Processing ${documents.length} documents for analysis...`);
+
+        for (const doc of documents) {
+            try {
+                // Construct storage path: user_id/category/filename
+                // Note: The filename in DB might not match the storage path exactly if we didn't save the path.
+                // But in uploadCompanyDocument we save the path as 'file_url' or construct it.
+                // Let's rely on the fact that we can reconstruct it or parse it from file_url if needed.
+                // Actually, uploadCompanyDocument saves 'file_url' which is the public URL.
+                // We need the storage path to download.
+                // The storage path format in upload is: `${user.id}/${category}/${Date.now()}_${sanitizedName}`
+                // But we don't have the exact timestamp used during upload in the DB record unless we stored it.
+                // Wait, in uploadCompanyDocument we return 'path' but we don't seem to save it in the DB explicitly in a 'storage_path' column.
+                // We save 'file_url'.
+                // We can try to extract the path from the public URL.
+
+                // Example public URL: https://.../storage/v1/object/public/company-documents/USER_ID/CATEGORY/FILENAME
+                const urlParts = doc.file_url.split('/company-documents/');
+                if (urlParts.length !== 2) continue;
+
+                const storagePath = urlParts[1];
+
+                const { data: fileData, error: downloadError } = await supabase.storage
+                    .from('company-documents')
+                    .download(storagePath);
+
+                if (downloadError || !fileData) {
+                    console.warn(`Could not download document ${doc.document_name}:`, downloadError);
+                    continue;
+                }
+
+                // Extract text based on mime type
+                let textContent = "";
+                if (doc.mime_type === 'application/pdf') {
+                    const arrayBuffer = await fileData.arrayBuffer();
+                    const buffer = Buffer.from(arrayBuffer);
+                    const pdfData = await pdf(buffer);
+                    textContent = pdfData.text;
+                } else {
+                    // For text/plain etc.
+                    textContent = await fileData.text();
+                }
+
+                // Truncate if too long to avoid token limits (though Gemini 1.5 has large context)
+                // Let's keep first 20000 chars per doc for now to be safe/fast
+                documentsText += `\n--- DOCUMENTO: ${doc.document_name} (${doc.document_type}) ---\n${textContent.substring(0, 50000)}\n`;
+
+            } catch (err) {
+                console.error(`Error processing document ${doc.document_name}:`, err);
+            }
+        }
+    }
+
+    // 5. Construct Prompt
+    const prompt = `
+    Actúa como un consultor experto en gerencia, licitaciones y análisis empresarial.
+    Realiza un análisis técnico y gerencial exhaustivo de la siguiente empresa, basado en su información registrada y documentos cargados.
+
+    INFORMACIÓN DE LA EMPRESA:
+    - Nombre: ${company.company_name}
+    - NIT: ${company.nit}
+    - Representante Legal: ${company.legal_representative}
+    - Sector: ${company.economic_sector}
+    - Descripción: ${company.description || 'No disponible'}
+    - Ciudad: ${company.city}
+
+    INDICADORES FINANCIEROS:
+    - Índice de Liquidez: ${company.financial_indicators?.liquidity_index || 'N/A'}
+    - Nivel de Endeudamiento: ${company.financial_indicators?.indebtedness_index ? (company.financial_indicators.indebtedness_index * 100).toFixed(2) + '%' : 'N/A'}
+    - Capital de Trabajo: ${company.financial_indicators?.working_capital || 'N/A'}
+    - Patrimonio: ${company.financial_indicators?.equity || 'N/A'}
+
+    EXPERIENCIA (CONTRATOS):
+    ${contracts?.map((c: any) => `- Objeto: ${c.description || 'N/A'}, Cliente: ${c.client_name}, Valor: $${c.contract_value}, Fecha: ${c.execution_date}`).join('\n') || 'No hay contratos registrados.'}
+
+    CONTENIDO DE LOS DOCUMENTOS CARGADOS:
+    ${documentsText}
+
+    Genera un INFORME TÉCNICO Y GERENCIAL con la siguiente estructura (usa formato Markdown):
+
+    # Informe de Análisis Empresarial: ${company.company_name}
+
+    ## 1. Resumen Ejecutivo
+    Visión general del estado actual de la empresa, sus fortalezas clave y su posición en el mercado.
+
+    ## 2. Análisis Financiero
+    Evaluación de la salud financiera basada en los indicadores. Interpreta qué significan los números (liquidez, endeudamiento, etc.) para la operatividad de la empresa.
+
+    ## 3. Capacidad Técnica y Experiencia
+    Análisis de la experiencia demostrada a través de los contratos. Identifica áreas de especialización y magnitud de proyectos manejados.
+
+    ## 4. Análisis de Documentación
+    Evaluación de la calidad y completitud de la documentación legal, financiera y técnica aportada.
+
+    ## 5. Recomendaciones Estratégicas
+    Sugerencias concretas para mejorar el perfil de la empresa ante posibles licitaciones o clientes.
+
+    ## 6. Conclusión
+    Veredicto final sobre la capacidad de contratación y solidez de la empresa.
+    `;
+
+    // 6. Call Gemini AI
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    return text;
+}
