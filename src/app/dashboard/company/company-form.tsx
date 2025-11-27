@@ -7,7 +7,6 @@ import { cn } from "@/lib/utils";
 import { saveCompanyInfo, generateDocumentSummary, uploadCompanyDocument, listCompanyDocuments, deleteCompanyDocument, saveContract, listCompanyContracts, deleteContract, generateCompanyAnalysis } from "./actions";
 import ReactMarkdown from 'react-markdown';
 import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 import { testDatabaseConnection } from "./test-db";
 import { DocumentUpload, UploadedFile } from "./document-upload";
 
@@ -78,24 +77,43 @@ export default function CompanyForm({ company }: CompanyFormProps) {
     };
 
     const handleDownloadPDF = async () => {
-        const element = document.getElementById('report-content');
-        if (!element) return;
+        if (!analysisReport) return;
 
         try {
-            const canvas = await html2canvas(element, {
-                scale: 2,
-                backgroundColor: '#1e293b', // Match modal background
-                logging: false
-            });
-
-            const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF({
                 orientation: 'portrait',
-                unit: 'px',
-                format: [canvas.width, canvas.height]
+                unit: 'mm',
+                format: 'a4'
             });
 
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+            // Clean markdown for PDF (remove markdown syntax)
+            const cleanText = analysisReport
+                .replace(/^#{1,6}\s+/gm, '') // Remove heading markers
+                .replace(/\*\*(.+?)\*\*/g, '$1') // Remove bold markers
+                .replace(/\*(.+?)\*/g, '$1') // Remove italic markers
+                .replace(/^[\*\-]\s+/gm, '  • ') // Convert bullets
+                .replace(/^\d+\.\s+/gm, '  '); // Clean numbered lists
+
+            // Set text color and font
+            pdf.setTextColor(30, 41, 59); // Dark gray
+            pdf.setFontSize(10);
+
+            // Split text into lines and add to PDF
+            const lines = pdf.splitTextToSize(cleanText, 180); // 180mm width with margins
+            let y = 20; // Starting Y position
+            const lineHeight = 7;
+            const pageHeight = 280; // A4 height minus bottom margin
+
+            lines.forEach((line: string) => {
+                // Check if we need a new page
+                if (y > pageHeight) {
+                    pdf.addPage();
+                    y = 20;
+                }
+                pdf.text(line, 15, y);
+                y += lineHeight;
+            });
+
             pdf.save(`Informe_Analisis_${company?.company_name || 'Empresa'}.pdf`);
         } catch (error) {
             console.error("Error downloading PDF:", error);
