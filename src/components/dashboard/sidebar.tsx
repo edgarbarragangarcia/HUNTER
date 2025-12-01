@@ -7,20 +7,33 @@ import {
     LayoutDashboard,
     Building2,
     Search,
-    Settings,
     Menu,
     X,
     ChevronLeft,
     ChevronRight,
     Target,
+    Rocket,
+    ChevronDown,
+    LineChart,
+    Bot,
+    BarChart3,
+    Activity,
+    Trophy,
+    PieChart
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useDashboard } from "./dashboard-context";
 
-const sidebarLinks = [
+interface SidebarItem {
+    name: string;
+    href: string;
+    icon: any;
+    subItems?: SidebarItem[];
+}
+
+const sidebarLinks: SidebarItem[] = [
     {
         name: "Dashboard",
         href: "/dashboard",
@@ -35,16 +48,43 @@ const sidebarLinks = [
         name: "Shot",
         href: "/dashboard/shot",
         icon: Target,
+        subItems: [
+            {
+                name: "Predictions",
+                href: "/dashboard/shot/predictions",
+                icon: LineChart,
+            },
+            {
+                name: "Monitor",
+                href: "/dashboard/shot/monitor",
+                icon: Activity,
+            },
+            {
+                name: "Ranking",
+                href: "/dashboard/shot/ranking",
+                icon: Trophy,
+            },
+            {
+                name: "Copilot",
+                href: "/dashboard/shot/copilot",
+                icon: Bot,
+            },
+            {
+                name: "Analytics",
+                href: "/dashboard/shot/analytics",
+                icon: BarChart3,
+            },
+            {
+                name: "Market Analysis",
+                href: "/dashboard/shot/market-analysis",
+                icon: PieChart,
+            },
+        ],
     },
     {
-        name: "Búsqueda",
-        href: "/dashboard/search",
-        icon: Search,
-    },
-    {
-        name: "Configuración",
-        href: "/dashboard/settings",
-        icon: Settings,
+        name: "Misiones",
+        href: "/dashboard/missions",
+        icon: Rocket,
     },
 ];
 
@@ -53,6 +93,7 @@ export function Sidebar({ }: { userEmail?: string; userName?: string | null }) {
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
     const { isCollapsed, toggleCollapse } = useDashboard();
+    const [expandedItems, setExpandedItems] = useState<string[]>([]);
     const router = useRouter();
 
     useEffect(() => {
@@ -66,7 +107,25 @@ export function Sidebar({ }: { userEmail?: string; userName?: string | null }) {
         return () => window.removeEventListener('resize', checkDesktop);
     }, []);
 
+    // Auto-expand if active link is a sub-item
+    useEffect(() => {
+        sidebarLinks.forEach(link => {
+            if (link.subItems) {
+                const hasActiveSubItem = link.subItems.some(sub => pathname.startsWith(sub.href));
+                if (hasActiveSubItem && !expandedItems.includes(link.name)) {
+                    setExpandedItems(prev => [...prev, link.name]);
+                }
+            }
+        });
+    }, [pathname]);
 
+    const toggleExpand = (name: string) => {
+        setExpandedItems(prev =>
+            prev.includes(name)
+                ? prev.filter(item => item !== name)
+                : [...prev, name]
+        );
+    };
 
     return (
         <>
@@ -114,25 +173,78 @@ export function Sidebar({ }: { userEmail?: string; userName?: string | null }) {
                         </div>
 
                         {/* Navigation */}
-                        <nav className="flex-1 px-4 py-6 space-y-2">
+                        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
                             {sidebarLinks.map((link) => {
-                                const isActive = pathname === link.href;
+                                const isActive = pathname === link.href || (link.subItems && link.subItems.some(sub => pathname.startsWith(sub.href)));
+                                const isExpanded = expandedItems.includes(link.name);
+                                const hasSubItems = link.subItems && link.subItems.length > 0;
+
                                 return (
-                                    <Link
-                                        key={link.href}
-                                        href={link.href}
-                                        onClick={() => setIsMobileOpen(false)}
-                                        className={cn(
-                                            "flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors",
-                                            isActive
-                                                ? "bg-primary/10 text-primary border border-primary/20"
-                                                : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                                        )}
-                                        title={isCollapsed ? link.name : undefined}
-                                    >
-                                        <link.icon className="w-5 h-5 flex-shrink-0" />
-                                        {!isCollapsed && <span>{link.name}</span>}
-                                    </Link>
+                                    <div key={link.name}>
+                                        <div
+                                            className={cn(
+                                                "flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-colors cursor-pointer",
+                                                isActive
+                                                    ? "bg-primary/10 text-primary border border-primary/20"
+                                                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                                            )}
+                                            onClick={() => {
+                                                if (hasSubItems) {
+                                                    toggleExpand(link.name);
+                                                } else {
+                                                    router.push(link.href);
+                                                    setIsMobileOpen(false);
+                                                }
+                                            }}
+                                            title={isCollapsed ? link.name : undefined}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <link.icon className="w-5 h-5 flex-shrink-0" />
+                                                {!isCollapsed && <span>{link.name}</span>}
+                                            </div>
+                                            {!isCollapsed && hasSubItems && (
+                                                <ChevronDown
+                                                    className={cn(
+                                                        "w-4 h-4 transition-transform",
+                                                        isExpanded ? "transform rotate-180" : ""
+                                                    )}
+                                                />
+                                            )}
+                                        </div>
+
+                                        {/* Sub-items */}
+                                        <AnimatePresence>
+                                            {!isCollapsed && hasSubItems && isExpanded && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: "auto", opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="overflow-hidden ml-4 mt-1 space-y-1 border-l border-border pl-2"
+                                                >
+                                                    {link.subItems!.map((subItem) => {
+                                                        const isSubActive = pathname === subItem.href;
+                                                        return (
+                                                            <Link
+                                                                key={subItem.href}
+                                                                href={subItem.href}
+                                                                onClick={() => setIsMobileOpen(false)}
+                                                                className={cn(
+                                                                    "flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                                                                    isSubActive
+                                                                        ? "text-primary bg-primary/5"
+                                                                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                                                                )}
+                                                            >
+                                                                <subItem.icon className="w-4 h-4 flex-shrink-0" />
+                                                                <span>{subItem.name}</span>
+                                                            </Link>
+                                                        );
+                                                    })}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
                                 );
                             })}
                         </nav>
