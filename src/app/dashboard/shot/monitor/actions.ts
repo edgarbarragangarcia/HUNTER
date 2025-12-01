@@ -1,97 +1,91 @@
 'use server'
 
+import { getCompanyData, getCompanyContracts, getExperienceByUNSPSC } from "@/lib/company-data";
 import { createClient } from "@/lib/supabase/server";
+import { getOpportunities } from "../predictions/actions";
 
-export async function getMonitoredEntities() {
-    const supabase = await createClient();
+export async function getMonitoredTenders() {
+    // Reuse prediction logic but show all matches
+    const opportunities = await getOpportunities();
 
-    // In a real scenario, we would have a 'monitored_entities' table linking profiles to entities
-    // For now, we'll fetch unique entities from historical tenders that the user might be interested in
-    // Or just top entities by volume
-
-    const { data, error } = await supabase
-        .from('historical_tenders')
-        .select('entity_name, amount')
-        .order('published_at', { ascending: false })
-        .limit(50);
-
-    if (error) return [];
-
-    // Aggregate by entity
-    const entityStats: Record<string, { count: number, totalAmount: number }> = {};
-
-    data.forEach((tender: any) => {
-        if (!entityStats[tender.entity_name]) {
-            entityStats[tender.entity_name] = { count: 0, totalAmount: 0 };
-        }
-        entityStats[tender.entity_name].count++;
-        entityStats[tender.entity_name].totalAmount += Number(tender.amount) || 0;
-    });
-
-    // Convert to array and sort by count
-    return Object.entries(entityStats)
-        .map(([name, stats]) => ({
-            name,
-            processCount: stats.count,
-            executedBudget: stats.totalAmount, // This is just sum of recent tenders, not total executed
-            lastActivity: 'Reciente' // Placeholder
-        }))
-        .sort((a, b) => b.processCount - a.processCount)
-        .slice(0, 6);
-}
-
-export async function getCompetitors() {
-    const supabase = await createClient();
-
-    const { data, error } = await supabase
-        .from('competitor_analysis')
-        .select('*')
-        .order('win_rate', { ascending: false })
-        .limit(10);
-
-    if (error) return [];
-
-    return data.map((comp: any) => ({
-        id: comp.id,
-        name: comp.name,
-        nit: comp.nit,
-        winRate: comp.win_rate,
-        totalContracts: comp.total_contracts,
-        riskScore: comp.risk_score,
-        commonProcesses: 0 // Placeholder, would require join with tender_competitors
+    return opportunities.map(opp => ({
+        ...opp,
+        status: 'MONITORED',
+        lastUpdate: new Date().toISOString()
     }));
 }
 
-export async function getMarketAlerts() {
+export async function getRecentActivity() {
+    const company = await getCompanyData();
+
+    if (!company) return [];
+
+    const companyUNSPSC = company.unspsc_codes || [];
+
+    // Fetch recent tenders matching company's UNSPSC codes
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) return [];
-
-    // Get user profile
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .single();
-
-    if (!profile) return [];
-
-    const { data, error } = await supabase
-        .from('ai_alerts')
+    const { data: tenders } = await supabase
+        .from('tenders')
         .select('*')
-        .eq('profile_id', profile.id)
+        .eq('status', 'OPEN')
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(20);
 
-    if (error) return [];
+    if (!tenders) return [];
 
-    return data.map((alert: any) => ({
-        id: alert.id,
-        title: alert.title,
-        message: alert.message,
-        type: alert.alert_type,
-        date: alert.created_at,
-        priority: alert.priority
-    }));
+    // Filter and format
+    const activity = tenders
+        .filter(tender => {
+            if (!tender.required_unspsc) return false;
+            return tender.required_unspsc.some((code: string) =>
+                companyUNSPSC.some(companyCode => companyCode.startsWith(code.slice(0, 4)))
+            );
+        })
+        .map(tender => ({
+            id: tender.id,
+            title: tender.title,
+            entity: tender.entity_name,
+            amount: tender.amount,
+            type: 'NEW_TENDER',
+            date: tender.created_at
+        }))
+        .slice(0, 10);
+
+    return activity;
 }
+
+export async function getMonitorStats() {
+    const company = await getCompanyData();
+    const contracts = await getCompanyContracts();
+
+    if (!company) {
+        return {
+            activeTenders: 0,
+            matchingOpportunities: 0,
+            trackedSectors: 0
+        };
+    }
+
+    const companyExp = getExperienceByUNSPSC(contracts);
+
+    // Get total active tenders
+    const supabase = await createClient();
+    const { count: activeTenders } = await supabase
+        .from('tenders')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'OPEN');
+
+    // Get matching opportunities
+    const opportunities = await getOpportunities();
+
+    return {
+        activeTenders: activeTenders || 0,
+        matchingOpportunities: opportunities.length,
+        trackedSectors: Object.keys(companyExp).length
+    };
+}
+
+// Aliases for backward compatibility
+export const getMonitoredEntities = getMonitoredTenders;
+export const getCompetitors = getMonitorStats; // Placeholder
+export const getMarketAlerts = getRecentActivity;

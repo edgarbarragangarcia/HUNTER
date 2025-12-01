@@ -79,13 +79,21 @@ export async function createProject(formData: FormData) {
     const methodology = formData.get('methodology') as string;
     const tenderId = formData.get('tenderId') as string;
 
+    // Validate UUID format (simple check)
+    const isValidUUID = (str: string) => {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        return uuidRegex.test(str);
+    };
+
+    const validTenderId = tenderId && isValidUUID(tenderId) ? tenderId : null;
+
     const { data, error } = await supabase
         .from('projects')
         .insert({
             company_id: company!.id,
             name,
             methodology,
-            tender_id: tenderId || null,
+            tender_id: validTenderId,
             status: 'ACTIVE',
             progress: 0
         })

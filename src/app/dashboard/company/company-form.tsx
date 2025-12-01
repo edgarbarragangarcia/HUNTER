@@ -862,11 +862,10 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                         <div className="flex gap-2">
                                             <button
                                                 onClick={() => setIsManagingContracts(true)}
-                                                className="flex items-center gap-2 px-6 py-2.5 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors shadow-lg hover:shadow-xl font-medium"
+                                                className="w-12 h-12 rounded-full bg-primary hover:bg-primary/90 text-white flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
                                                 title="Gestionar Experiencia"
                                             >
                                                 <FileText className="w-5 h-5" />
-                                                <span>Gestionar Experiencia</span>
                                             </button>
                                         </div>
                                     </div>
@@ -894,7 +893,6 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                                     <FileText className="w-5 h-5" />
                                                 </button>
                                             )}
-
                                         </div>
                                     </div>
 

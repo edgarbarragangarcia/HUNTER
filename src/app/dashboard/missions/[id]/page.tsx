@@ -26,8 +26,9 @@ async function getProjectDetails(id: string) {
     return data;
 }
 
-export default async function MissionDetailPage({ params }: { params: { id: string } }) {
-    const project = await getProjectDetails(params.id);
+export default async function MissionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    const project = await getProjectDetails(id);
 
     if (!project) {
         notFound();
