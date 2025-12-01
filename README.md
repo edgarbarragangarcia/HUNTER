@@ -1,38 +1,71 @@
-# HUNTER
+# HUNTER - Plataforma de Inteligencia de Negocios para Licitaciones
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+HUNTER es una plataforma avanzada diseñada para optimizar la gestión y análisis de oportunidades de negocio con el Estado (SECOP II). Utiliza Inteligencia Artificial para analizar documentos, evaluar requisitos y generar informes estratégicos.
 
-## Getting Started
+## 🚀 Características Principales
 
-First, run the development server:
+- **Market Analysis**: Búsqueda inteligente de oportunidades en tiempo real usando la API de Socrata (SECOP II).
+- **Filtro Inteligente**: Filtrado automático de oportunidades basado en los códigos UNSPSC de la empresa.
+- **Análisis con IA**: Procesamiento de documentos (PDF, Excel, Imágenes) con Gemini 2.5 Flash Lite para extracción de datos y generación de resúmenes.
+- **Gestión de Empresa**: Perfilamiento completo de empresas, incluyendo indicadores financieros y experiencia contractual.
+- **Ranking de Competidores**: Análisis comparativo y posicionamiento en el mercado.
+
+## 🛠️ Arquitectura y Tecnologías
+
+El proyecto está construido sobre un stack moderno y robusto:
+
+- **Frontend**: Next.js 15 (App Router), React, Tailwind CSS, Shadcn UI.
+- **Backend**: Server Actions, Supabase (Auth & Database).
+- **IA**: Google Gemini API (vía `ai-processor` service).
+- **Datos**: Socrata Open Data API (Datos Abiertos Colombia).
+
+### Servicios Clave
+
+#### `src/lib/ai-processor.ts`
+Servicio centralizado para todas las operaciones de Inteligencia Artificial.
+- **`generateDocumentSummary`**: Analiza documentos cargados y genera resúmenes ejecutivos.
+- **`generateCompanyAnalysisReport`**: Crea informes gerenciales completos cruzando datos financieros, experiencia y documentos.
+- **`extractTextFromDocument`**: Utilidad para extracción de texto desde PDFs e imágenes almacenados en Supabase.
+
+#### `src/lib/socrata.ts`
+Cliente para la interacción con la API de Datos Abiertos (SECOP II).
+- Búsqueda optimizada por códigos UNSPSC.
+- Filtrado avanzado por cuantía, ubicación y entidad.
+
+## 📂 Estructura del Proyecto
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+src/
+├── app/
+│   ├── dashboard/       # Módulos principales (Company, Market Analysis, Ranking)
+│   ├── login/           # Autenticación
+│   └── page.tsx         # Landing page
+├── components/          # Componentes UI reutilizables (basados en Shadcn)
+├── lib/
+│   ├── ai-processor.ts  # Servicio de IA (Gemini)
+│   ├── socrata.ts       # Cliente API SECOP II
+│   ├── supabase/        # Cliente y utilidades de base de datos
+│   └── utils.ts         # Helpers generales
+└── ...
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ⚡️ Optimización y Limpieza (Diciembre 2025)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Se realizó una refactorización mayor para mejorar la mantenibilidad:
+- **Centralización de Lógica**: Se movió la lógica de IA de los Server Actions a servicios dedicados.
+- **Eliminación de Código Muerto**: Se depuraron scripts de prueba y archivos temporales.
+- **Eficiencia**: Se optimizaron las consultas a base de datos y la carga de archivos.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📦 Despliegue
 
-## Learn More
+El proyecto está configurado para despliegue continuo en **Vercel**.
+Requiere las siguientes variables de entorno:
 
-To learn more about Next.js, take a look at the following resources:
+```env
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+GEMINI_API_KEY=...
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+Desarrollado por Edgar Barragan.
