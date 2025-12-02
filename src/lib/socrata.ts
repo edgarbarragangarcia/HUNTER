@@ -22,8 +22,16 @@ const APP_TOKEN = process.env.SOCRATA_APP_TOKEN; // Optional but recommended
 
 export async function searchSecopProcesses(query: string, limit: number = 20): Promise<SecopProcess[]> {
     try {
-        // Filter by 'Presentación de oferta' to show active opportunities
-        const whereClause = `fase = 'Presentación de oferta'`;
+        // Calculate date threshold (1 month ago - more strict to show only recent/active)
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        const dateThreshold = oneMonthAgo.toISOString().split('T')[0];
+
+        // Filter by:
+        // 1. 'Presentación de oferta' to show active opportunities
+        // 2. Published in the last month (likely still open)
+        // 3. Price > 0 to exclude invalid contracts
+        const whereClause = `fase = 'Presentación de oferta' AND fecha_de_publicacion_del >= '${dateThreshold}' AND precio_base > 0`;
 
         const url = new URL(SOCRATA_API_URL);
         url.searchParams.append("$limit", limit.toString());
@@ -39,6 +47,8 @@ export async function searchSecopProcesses(query: string, limit: number = 20): P
             headers["X-App-Token"] = APP_TOKEN;
         }
 
+        console.log('Querying SECOP with filters - Date >= ', dateThreshold, ', Price > 0');
+
         const response = await fetch(url.toString(), { headers, next: { revalidate: 3600 } });
 
         if (!response.ok) {
@@ -46,7 +56,20 @@ export async function searchSecopProcesses(query: string, limit: number = 20): P
         }
 
         const data = await response.json();
-        return data as SecopProcess[];
+
+        // Additional client-side filtering for extra safety
+        const filteredData = data.filter((proc: SecopProcess) => {
+            const price = parseFloat(proc.precio_base || '0');
+            const pubDate = new Date(proc.fecha_de_publicacion_del);
+            const isRecent = pubDate >= oneMonthAgo;
+            const hasValidPrice = price > 0;
+
+            return isRecent && hasValidPrice;
+        });
+
+        console.log(`SECOP returned ${data.length} contracts, ${filteredData.length} after filtering`);
+
+        return filteredData as SecopProcess[];
 
     } catch (error) {
         console.error("Error fetching SECOP data:", error);
@@ -203,18 +226,22 @@ export async function searchOpportunitiesByUNSPSC(unspscCodes: string[], limit: 
     try {
         if (unspscCodes.length === 0) return [];
 
+        // Calculate date threshold (1 month ago - more strict to show only recent/active)
+        const oneMonthAgo = new Date();
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        const dateThreshold = oneMonthAgo.toISOString().split('T')[0];
+
         // Search for active processes in company's sectors
         // Use LIKE to match codes regardless of version prefix (e.g. V1.80111600)
         // Construct OR clause for all codes
         const codeConditions = unspscCodes.map(code => `codigo_principal_de_categoria LIKE '%${code}%'`);
         const codesWhere = `(${codeConditions.join(' OR ')})`;
 
-        const whereClause = `fase = 'Presentación de oferta' AND ${codesWhere}`;
+        // Apply same filters as searchSecopProcesses
+        const whereClause = `fase = 'Presentación de oferta' AND ${codesWhere} AND fecha_de_publicacion_del >= '${dateThreshold}' AND precio_base > 0`;
 
         const url = new URL(SOCRATA_API_URL);
         url.searchParams.append("$limit", limit.toString());
-        // Remove $q to rely solely on the specific column filter
-        // url.searchParams.append("$q", searchQuery); 
         url.searchParams.append("$where", whereClause);
         url.searchParams.append("$order", "fecha_de_publicacion_del DESC");
 

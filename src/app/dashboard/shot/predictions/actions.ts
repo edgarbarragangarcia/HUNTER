@@ -1,77 +1,16 @@
 'use server'
 
 import { getCompanyData, getCompanyContracts, calculateCapacity, getExperienceByUNSPSC } from "@/lib/company-data";
-import { createClient } from "@/lib/supabase/server";
-
-interface Tender {
-    id: string;
-    secop_id: string;
-    title: string;
-    entity_name: string;
-    amount: number;
-    closing_at: string;
-    category?: string;
-    required_unspsc?: string[];
-}
+import { searchOpportunitiesByUNSPSC } from "@/lib/socrata";
+import { analyzeTenderMatch } from "../market-analysis/match-analyzer";
 
 /**
- * Calculate match score between company profile and tender
+ * Get prediction statistics based on real SECOP data
  */
-function calculateMatchScore(company: any, tender: Tender, companyExperience: Record<string, any>): number {
-    let score = 0;
-
-    // Financial fit (40 points)
-    const capacity = calculateCapacity(company);
-    if (capacity > 0 && tender.amount > 0) {
-        const ratio = tender.amount / capacity;
-        if (ratio <= 1) {
-            // Perfect fit or below capacity
-            score += 40;
-        } else if (ratio <= 1.5) {
-            // Slightly above capacity but manageable
-            score += 25;
-        } else if (ratio <= 2) {
-            // Requires consortium or high effort
-            score += 10;
-        }
-        // else 0 points - out of capacity range
-    }
-
-    // Experience match (40 points)
-    if (tender.required_unspsc && tender.required_unspsc.length > 0) {
-        const companyUNSPSC = Object.keys(companyExperience);
-        const matchingCodes = tender.required_unspsc.filter(code =>
-            companyUNSPSC.some(companyCode => companyCode.startsWith(code.slice(0, 4)))
-        );
-        const matchRatio = matchingCodes.length / tender.required_unspsc.length;
-        score += Math.round(matchRatio * 40);
-    } else {
-        // No UNSPSC requirement, give partial points
-        score += 20;
-    }
-
-    // Size compatibility (20 points)
-    const contracts = Object.values(companyExperience);
-    if (contracts.length > 0) {
-        const avgContractValue = contracts.reduce((sum: number, c: any) => sum + c.totalValue, 0) / contracts.length;
-        const sizeRatio = tender.amount / avgContractValue;
-        if (sizeRatio >= 0.5 && sizeRatio <= 2) {
-            // Similar size to previous contracts
-            score += 20;
-        } else if (sizeRatio >= 0.3 && sizeRatio <= 3) {
-            // Somewhat different but manageable
-            score += 10;
-        }
-    }
-
-    return Math.min(100, Math.round(score));
-}
-
 export async function getPredictionStats() {
     const company = await getCompanyData();
-    const contracts = await getCompanyContracts();
 
-    if (!company) {
+    if (!company || !company.unspsc_codes || company.unspsc_codes.length === 0) {
         return {
             opportunities: 0,
             avgSuccessScore: 0,
@@ -79,18 +18,10 @@ export async function getPredictionStats() {
         };
     }
 
-    const companyExperience = getExperienceByUNSPSC(contracts);
+    // Fetch real opportunities from SECOP using company's UNSPSC codes
+    const processes = await searchOpportunitiesByUNSPSC(company.unspsc_codes, 50);
 
-    // Fetch recent tenders
-    const supabase = await createClient();
-    const { data: tenders } = await supabase
-        .from('tenders')
-        .select('*')
-        .eq('status', 'OPEN')
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-    if (!tenders) {
+    if (processes.length === 0) {
         return {
             opportunities: 0,
             avgSuccessScore: 0,
@@ -98,19 +29,25 @@ export async function getPredictionStats() {
         };
     }
 
-    // Calculate scores for all tenders
-    const scoredTenders = tenders.map(tender => ({
-        ...tender,
-        score: calculateMatchScore(company, tender, companyExperience)
-    }));
+    // Analyze each process
+    const analyzed = await Promise.all(
+        processes.map(async (proc) => {
+            const analysis = await analyzeTenderMatch(proc, company);
+            return {
+                ...proc,
+                matchScore: analysis.matchScore,
+                isMatch: analysis.isMatch
+            };
+        })
+    );
 
-    const opportunities = scoredTenders.filter(t => t.score >= 70).length;
-    const avgScore = scoredTenders.length > 0
-        ? Math.round(scoredTenders.reduce((sum, t) => sum + t.score, 0) / scoredTenders.length)
+    const opportunities = analyzed.filter(p => p.matchScore >= 70).length;
+    const avgScore = analyzed.length > 0
+        ? Math.round(analyzed.reduce((sum, p) => sum + p.matchScore, 0) / analyzed.length)
         : 0;
 
-    // Identify risks: tenders we're tracking but have low scores
-    const risks = scoredTenders.filter(t => t.score >= 30 && t.score < 50).length;
+    // Risks: tenders with medium scores (30-69) - need attention
+    const risks = analyzed.filter(p => p.matchScore >= 30 && p.matchScore < 70).length;
 
     return {
         opportunities,
@@ -119,30 +56,30 @@ export async function getPredictionStats() {
     };
 }
 
+/**
+ * Get high-probability opportunities
+ */
+import { analyzeTenderDescription, TenderAnalysis } from "./ai-actions";
+
 export async function getOpportunities() {
     const company = await getCompanyData();
-    const contracts = await getCompanyContracts();
 
-    if (!company) return [];
+    if (!company || !company.unspsc_codes || company.unspsc_codes.length === 0) {
+        return [];
+    }
 
-    const companyExperience = getExperienceByUNSPSC(contracts);
+    // Fetch real opportunities from SECOP
+    const processes = await searchOpportunitiesByUNSPSC(company.unspsc_codes, 50);
 
-    // Fetch recent tenders
-    const supabase = await createClient();
-    const { data: tenders } = await supabase
-        .from('tenders')
-        .select('*')
-        .eq('status', 'OPEN')
-        .order('created_at', { ascending: false })
-        .limit(50);
+    if (processes.length === 0) return [];
 
-    if (!tenders) return [];
+    // Analyze and score each process
+    const scoredProcesses = await Promise.all(
+        processes.map(async (proc) => {
+            const analysis = await analyzeTenderMatch(proc, company);
 
-    // Score and filter high-probability opportunities
-    const opportunities = tenders
-        .map(tender => {
-            const score = calculateMatchScore(company, tender, companyExperience);
             let reason = "";
+            const score = analysis.matchScore;
 
             if (score >= 90) {
                 reason = "Excelente match financiero y de experiencia";
@@ -153,57 +90,78 @@ export async function getOpportunities() {
             }
 
             return {
-                id: tender.id,
-                title: tender.title,
-                entity: tender.entity_name,
-                amount: tender.amount,
-                closingDate: tender.closing_at,
+                id: proc.id_del_proceso,
+                title: proc.descripci_n_del_procedimiento,
+                entity: proc.entidad,
+                amount: parseFloat(proc.precio_base || '0'),
+                closingDate: proc.fecha_de_publicacion_del,
                 matchScore: score,
-                reason
+                reason: reason || analysis.reasons[0] || "Compatible con tu  perfil",
+                description: proc.descripci_n_del_procedimiento, // Keep description for AI analysis
+                aiAnalysis: null as TenderAnalysis | null
             };
         })
+    );
+
+    // Filter and sort top opportunities
+    const topOpportunities = scoredProcesses
         .filter(opp => opp.matchScore >= 70)
         .sort((a, b) => b.matchScore - a.matchScore)
         .slice(0, 10);
 
-    return opportunities;
+    // Perform AI analysis on the top 3 opportunities to save tokens/time
+    const enrichedOpportunities = await Promise.all(
+        topOpportunities.map(async (opp, index) => {
+            if (index < 3) {
+                const analysis = await analyzeTenderDescription(opp.description, opp.title);
+                return { ...opp, aiAnalysis: analysis };
+            }
+            return opp;
+        })
+    );
+
+    return enrichedOpportunities;
 }
 
+/**
+ * Get identified risks
+ */
 export async function getRisks() {
     const company = await getCompanyData();
-    const contracts = await getCompanyContracts();
 
-    if (!company) return [];
+    if (!company || !company.unspsc_codes || company.unspsc_codes.length === 0) {
+        return [];
+    }
 
-    const companyExperience = getExperienceByUNSPSC(contracts);
     const capacity = calculateCapacity(company);
 
-    // Fetch recent tenders
-    const supabase = await createClient();
-    const { data: tenders } = await supabase
-        .from('tenders')
-        .select('*')
-        .eq('status', 'OPEN')
-        .order('created_at', { ascending: false })
-        .limit(50);
+    // Fetch real opportunities from SECOP
+    const processes = await searchOpportunitiesByUNSPSC(company.unspsc_codes, 50);
 
-    if (!tenders) return [];
+    if (processes.length === 0) return [];
 
-    // Identify risk scenarios
-    const risks = tenders
-        .map(tender => {
-            const score = calculateMatchScore(company, tender, companyExperience);
+    // Analyze and identify risks
+    const risks = await Promise.all(
+        processes.map(async (proc) => {
+            const analysis = await analyzeTenderMatch(proc, company);
+            const amount = parseFloat(proc.precio_base || '0');
+            const score = analysis.matchScore;
 
-            // Risk: interesting tender but challenging
-            if (score >= 30 && score < 50) {
+            // Risk: interesting tender but challenging (30-69 score)
+            if (score >= 30 && score < 70) {
                 let title = "";
                 let description = "";
                 let severity: 'high' | 'medium' = 'medium';
 
-                if (tender.amount > capacity * 1.5) {
+                // Determine specific risk
+                if (amount > capacity * 1.5) {
                     title = "Capacidad Financiera Insuficiente";
-                    description = `El monto requerido (${new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(tender.amount)}) excede significativamente tu capacidad K`;
+                    description = `El monto requerido (${formatCurrency(amount)}) excede significativamente tu capacidad K`;
                     severity = 'high';
+                } else if (analysis.warnings.length > 0) {
+                    title = analysis.warnings[0];
+                    description = `Proceso: ${proc.descripci_n_del_procedimiento.substring(0, 100)}...`;
+                    severity = 'medium';
                 } else {
                     title = "Experiencia Limitada en Sector";
                     description = `Poca experiencia en los códigos UNSPSC requeridos para este proceso`;
@@ -211,17 +169,26 @@ export async function getRisks() {
                 }
 
                 return {
-                    id: tender.id,
-                    tenderId: tender.secop_id,
+                    id: proc.id_del_proceso,
+                    tenderId: proc.referencia_del_proceso,
                     title,
-                    description: `${description}. Proceso: ${tender.title}`,
+                    description,
                     severity
                 };
             }
             return null;
         })
+    );
+
+    return risks
         .filter((risk): risk is NonNullable<typeof risk> => risk !== null)
         .slice(0, 5);
+}
 
-    return risks;
+function formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        maximumFractionDigits: 0
+    }).format(amount);
 }

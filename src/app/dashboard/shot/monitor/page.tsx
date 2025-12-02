@@ -4,6 +4,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Building2, Users, Bell, Search, AlertCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { getMonitoredEntities, getCompetitors, getMarketAlerts } from "./actions";
+import { EntitySearch } from "./entity-search";
+import { MonitoredEntityCard } from "./monitored-entity-card";
 
 export default async function MonitorPage() {
     const entities = await getMonitoredEntities();
@@ -28,53 +30,20 @@ export default async function MonitorPage() {
 
                 <TabsContent value="entities" className="space-y-4">
                     <div className="flex items-center gap-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                type="search"
-                                placeholder="Buscar entidad para monitorear..."
-                                className="pl-8"
-                            />
+                        <div className="flex-1">
+                            <EntitySearch />
                         </div>
-                        <Button>Agregar Entidad</Button>
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                         {entities.length === 0 ? (
                             <div className="col-span-full text-center py-8 text-muted-foreground">
                                 <Building2 className="mx-auto h-12 w-12 opacity-20 mb-4" />
-                                <p>No hay entidades monitoreadas. Agrega una para comenzar.</p>
+                                <p>No hay entidades monitoreadas. Busca y agrega una para comenzar.</p>
                             </div>
                         ) : (
                             entities.map((entity, idx) => (
-                                <Card key={idx}>
-                                    <CardHeader className="flex flex-row items-center gap-4 space-y-0">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/20">
-                                            <Building2 className="h-5 w-5" />
-                                        </div>
-                                        <div className="flex-1 overflow-hidden">
-                                            <CardTitle className="text-base truncate" title={entity.name}>{entity.name}</CardTitle>
-                                            <CardDescription>Monitor Activo</CardDescription>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="mt-2 space-y-2 text-sm">
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Procesos Recientes:</span>
-                                                <span className="font-medium">{entity.processCount}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-muted-foreground">Monto Total:</span>
-                                                <span className="font-medium">
-                                                    {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(entity.executedBudget)}
-                                                </span>
-                                            </div>
-                                            <div className="pt-2">
-                                                <p className="text-xs text-muted-foreground">Última actividad: {entity.lastActivity}</p>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
+                                <MonitoredEntityCard key={idx} entity={entity} />
                             ))
                         )}
                     </div>

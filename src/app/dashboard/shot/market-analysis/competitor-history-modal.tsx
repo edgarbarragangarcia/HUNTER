@@ -18,14 +18,18 @@ export function CompetitorHistoryModal({ unspscCodes, processTitle }: Competitor
 
     useEffect(() => {
         if (isOpen && !hasLoaded) {
+            console.log('Modal opened, loading history for UNSPSC codes:', unspscCodes);
+            console.log('Exact codes:', JSON.stringify(unspscCodes));
             loadHistory();
         }
     }, [isOpen]);
 
     const loadHistory = async () => {
+        console.log('Starting loadHistory with codes:', unspscCodes);
         setLoading(true);
         try {
             const data = await getHistoricalContracts(unspscCodes);
+            console.log('Received historical data:', data.length, 'contracts');
             setHistory(data);
             setHasLoaded(true);
         } catch (error) {
@@ -127,8 +131,16 @@ export function CompetitorHistoryModal({ unspscCodes, processTitle }: Competitor
                                         </div>
                                         <p className="font-medium text-zinc-400">No se encontraron contratos históricos</p>
                                         <p className="text-xs mt-1 opacity-60 max-w-xs text-center">
-                                            No hay registros de contratos adjudicados con los mismos códigos UNSPSC en nuestra base de datos reciente.
+                                            {unspscCodes.length === 0
+                                                ? 'Esta licitación no tiene código UNSPSC definido.'
+                                                : `No hay registros de contratos adjudicados con el código UNSPSC ${unspscCodes[0]} en SECOP.`
+                                            }
                                         </p>
+                                        {unspscCodes.length > 0 && (
+                                            <p className="text-[10px] mt-2 opacity-40 text-center">
+                                                Código buscado: {unspscCodes.join(', ')}
+                                            </p>
+                                        )}
                                     </div>
                                 )}
                             </div>

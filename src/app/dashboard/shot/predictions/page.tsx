@@ -116,7 +116,7 @@ export default async function PredictionsPage() {
                     </Card>
                 </TabsContent>
 
-                <TabsContent value="success">
+                <TabsContent value="success" className="space-y-4">
                     <Card>
                         <CardHeader>
                             <CardTitle>Análisis de Probabilidad de Éxito</CardTitle>
@@ -124,12 +124,126 @@ export default async function PredictionsPage() {
                                 Evaluación detallada de tus posibilidades en procesos activos.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent>
-                            <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
-                                <Brain className="mb-4 h-12 w-12 opacity-20" />
-                                <p>Selecciona un proceso para ver el análisis detallado de éxito.</p>
-                                <p className="text-sm mt-2">(Funcionalidad en desarrollo: requiere seleccionar un proceso específico)</p>
-                            </div>
+                        <CardContent className="space-y-4">
+                            {opportunities.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                                    <Brain className="mb-4 h-12 w-12 opacity-20" />
+                                    <p>No hay procesos para analizar.</p>
+                                    <p className="text-sm mt-2">La IA analizará automáticamente las oportunidades basándose en tu perfil.</p>
+                                </div>
+                            ) : (
+                                opportunities.map((opp) => (
+                                    <div key={opp.id} className="rounded-md border p-4 space-y-3">
+                                        <div className="flex items-start justify-between">
+                                            <div className="space-y-1 flex-1">
+                                                <h3 className="font-semibold">{opp.title}</h3>
+                                                <p className="text-sm text-muted-foreground">{opp.entity}</p>
+                                            </div>
+                                            <Badge
+                                                variant={opp.matchScore >= 90 ? "default" : opp.matchScore >= 70 ? "secondary" : "outline"}
+                                                className={
+                                                    opp.matchScore >= 90
+                                                        ? "bg-green-600 hover:bg-green-700 text-white"
+                                                        : opp.matchScore >= 70
+                                                            ? "bg-blue-600 hover:bg-blue-700 text-white"
+                                                            : ""
+                                                }
+                                            >
+                                                {opp.matchScore}% Éxito
+                                            </Badge>
+                                        </div>
+
+                                        {/* Success Probability Bar */}
+                                        <div className="space-y-1">
+                                            <div className="flex justify-between text-xs text-muted-foreground">
+                                                <span>Probabilidad de Éxito</span>
+                                                <span>{opp.matchScore}%</span>
+                                            </div>
+                                            <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full transition-all ${opp.matchScore >= 90
+                                                        ? 'bg-green-600'
+                                                        : opp.matchScore >= 70
+                                                            ? 'bg-blue-600'
+                                                            : 'bg-yellow-600'
+                                                        }`}
+                                                    style={{ width: `${opp.matchScore}%` }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Details */}
+                                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground pt-2 border-t">
+                                            <div className="flex items-center gap-1">
+                                                <DollarSign className="h-3 w-3" />
+                                                <span>{formatCurrency(opp.amount)}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1">
+                                                <Calendar className="h-3 w-3" />
+                                                <span>Cierre: {formatDate(opp.closingDate)}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Reason */}
+                                        {opp.reason && (
+                                            <div className="flex items-start gap-2 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 p-2 rounded">
+                                                <Brain className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                                <span>{opp.reason}</span>
+                                            </div>
+                                        )}
+
+                                        {/* AI Analysis Section */}
+                                        {opp.aiAnalysis && (
+                                            <div className="mt-4 pt-4 border-t border-dashed">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <div className="p-1 rounded bg-purple-100 dark:bg-purple-900/30">
+                                                        <Brain className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                                                    </div>
+                                                    <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-100">Análisis de Entregables (IA)</h4>
+                                                </div>
+
+                                                <div className="space-y-3 text-sm">
+                                                    {opp.aiAnalysis.summary && (
+                                                        <div className="bg-muted/50 p-3 rounded-md text-muted-foreground italic text-xs">
+                                                            "{opp.aiAnalysis.summary}"
+                                                        </div>
+                                                    )}
+
+                                                    <div className="grid md:grid-cols-2 gap-4">
+                                                        {opp.aiAnalysis.deliverables && opp.aiAnalysis.deliverables.length > 0 && (
+                                                            <div>
+                                                                <h5 className="text-xs font-medium uppercase text-muted-foreground mb-2">Entregables Identificados</h5>
+                                                                <ul className="space-y-1">
+                                                                    {opp.aiAnalysis.deliverables.slice(0, 5).map((item: string, i: number) => (
+                                                                        <li key={i} className="flex items-start gap-2 text-xs">
+                                                                            <span className="mt-1.5 h-1 w-1 rounded-full bg-purple-500 flex-shrink-0" />
+                                                                            <span>{item}</span>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        )}
+
+                                                        {opp.aiAnalysis.technicalRequirements && opp.aiAnalysis.technicalRequirements.length > 0 && (
+                                                            <div>
+                                                                <h5 className="text-xs font-medium uppercase text-muted-foreground mb-2">Requisitos Técnicos</h5>
+                                                                <ul className="space-y-1">
+                                                                    {opp.aiAnalysis.technicalRequirements.slice(0, 5).map((item: string, i: number) => (
+                                                                        <li key={i} className="flex items-start gap-2 text-xs">
+                                                                            <span className="mt-1.5 h-1 w-1 rounded-full bg-blue-500 flex-shrink-0" />
+                                                                            <span>{item}</span>
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>

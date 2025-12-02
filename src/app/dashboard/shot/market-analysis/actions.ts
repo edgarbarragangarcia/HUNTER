@@ -187,5 +187,42 @@ export async function searchOpportunitiesByCompany() {
         return [];
     }
 
-    return await searchOpportunitiesByUNSPSC(company.unspsc_codes, 50);
+    const processes = await searchOpportunitiesByUNSPSC(company.unspsc_codes, 50);
+
+    // Add match analysis just like in searchMarketOpportunities
+    const { analyzeTenderMatch } = await import('./match-analyzer');
+
+    const processesWithAnalysis = await Promise.all(
+        processes.map(async (process) => {
+            try {
+                const matchAnalysis = await analyzeTenderMatch(process, company);
+
+                // Ensure the object is serializable (plain object, no functions)
+                const serializedAnalysis = {
+                    isMatch: matchAnalysis.isMatch,
+                    matchScore: matchAnalysis.matchScore,
+                    reasons: [...matchAnalysis.reasons],
+                    warnings: [...matchAnalysis.warnings]
+                };
+
+                return {
+                    ...process,
+                    matchAnalysis: serializedAnalysis
+                };
+            } catch (error) {
+                console.error('Error analyzing process in company search:', error);
+                return {
+                    ...process,
+                    matchAnalysis: null
+                };
+            }
+        })
+    );
+
+    // Sort by match score (highest first)
+    return processesWithAnalysis.sort((a, b) => {
+        const scoreA = a.matchAnalysis?.matchScore || 0;
+        const scoreB = b.matchAnalysis?.matchScore || 0;
+        return scoreB - scoreA;
+    });
 }
