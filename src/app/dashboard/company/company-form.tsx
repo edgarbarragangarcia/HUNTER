@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { saveCompanyInfo, generateDocumentSummary, uploadCompanyDocument, listCompanyDocuments, deleteCompanyDocument, saveContract, listCompanyContracts, deleteContract, generateCompanyAnalysis } from "./actions";
 import ReactMarkdown from 'react-markdown';
 import { jsPDF } from "jspdf";
-import { testDatabaseConnection } from "./test-db";
+
 import { DocumentUpload, UploadedFile } from "./document-upload";
 
 const tabs = [
@@ -125,9 +125,6 @@ export default function CompanyForm({ company }: CompanyFormProps) {
     useEffect(() => {
         const loadDocuments = async () => {
             try {
-                // Test database connection first
-                const testResult = await testDatabaseConnection();
-                console.log("🔍 Database test:", testResult);
 
                 const docs = await listCompanyDocuments();
                 console.log("📄 Documents loaded:", docs);
