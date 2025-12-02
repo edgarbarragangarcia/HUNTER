@@ -12,6 +12,8 @@ export interface SecopProcess {
     codigo_principal_de_categoria?: string; // UNSPSC code (e.g. V1.80111600)
     departamento_entidad?: string;
     ciudad_entidad?: string;
+    nombre_del_proveedor?: string;
+    valor_total_adjudicacion?: string;
 }
 
 // Using "SECOP II - Procesos de Contratación" dataset

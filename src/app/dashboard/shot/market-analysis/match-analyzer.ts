@@ -2,6 +2,7 @@
 
 import { CompanyData, calculateCapacity, getExperienceByUNSPSC, getCompanyContracts } from "@/lib/company-data";
 import { SecopProcess } from "@/lib/socrata";
+import { extractUNSPSCFromProcess } from "./match-helpers";
 
 /**
  * Analysis result for a tender process
@@ -114,33 +115,7 @@ function analyzeUNSPSCMatch(process: SecopProcess, company: CompanyData): {
     };
 }
 
-/**
- * Extracts UNSPSC codes from process data
- */
-function extractUNSPSCFromProcess(process: SecopProcess): string[] {
-    const codes: string[] = [];
-
-    // Try to extract from codigo_principal_de_categoria
-    if (process.codigo_principal_de_categoria) {
-        let code = process.codigo_principal_de_categoria.toString();
-
-        // Remove "V1." prefix if present (e.g. V1.80111600 -> 80111600)
-        if (code.startsWith('V1.')) {
-            code = code.substring(3);
-        }
-
-        if (code && code.length >= 4) {
-            codes.push(code);
-        }
-    }
-
-    // Could also extract from description using regex if needed
-    // const unspscRegex = /\b\d{8}\b/g;
-    // const matches = process.descripci_n_del_procedimiento?.match(unspscRegex);
-    // if (matches) codes.push(...matches);
-
-    return codes;
-}
+// extractUNSPSCFromProcess is now imported from match-helpers.ts
 
 /**
  * Analyzes financial capacity to handle the tender

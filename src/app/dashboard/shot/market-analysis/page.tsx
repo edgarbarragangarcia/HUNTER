@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { searchMarketOpportunities, getMarketInsights, getUserCompanyForFilter, searchOpportunitiesByCompany } from "./actions";
 import { SecopProcess } from "@/lib/socrata";
 import { evaluateProcessRequirements, addProcessToMissions } from "./process-actions";
+import { CompetitorHistoryModal } from "./competitor-history-modal";
+import { extractUNSPSCFromProcess } from "./match-helpers";
 
 
 export default function MarketAnalysisPage() {
@@ -237,18 +239,38 @@ export default function MarketAnalysisPage() {
                                         </div>
 
                                         {/* Match Analysis Details */}
-                                        {matchAnalysis && matchAnalysis.reasons.length > 0 && (
-                                            <div className="mb-3 p-2 rounded bg-green-500/5 border border-green-500/20">
-                                                <p className="text-[10px] font-medium text-green-400 mb-1">Por qué es compatible:</p>
-                                                <ul className="space-y-0.5">
-                                                    {matchAnalysis.reasons.slice(0, 2).map((reason: string, idx: number) => (
-                                                        <li key={idx} className="text-[10px] text-green-300/80 flex items-start gap-1">
-                                                            <span className="text-green-500 mt-0.5">•</span>
-                                                            <span className="line-clamp-1">{reason}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
+                                        {matchAnalysis && (
+                                            <>
+                                                {/* Reasons for Match */}
+                                                {matchAnalysis.reasons.length > 0 && (
+                                                    <div className="mb-3 p-2 rounded bg-green-500/5 border border-green-500/20">
+                                                        <p className="text-[10px] font-medium text-green-400 mb-1">Por qué es compatible:</p>
+                                                        <ul className="space-y-0.5">
+                                                            {matchAnalysis.reasons.slice(0, 2).map((reason: string, idx: number) => (
+                                                                <li key={idx} className="text-[10px] text-green-300/80 flex items-start gap-1">
+                                                                    <span className="text-green-500 mt-0.5">•</span>
+                                                                    <span className="line-clamp-1">{reason}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+
+                                                {/* Warnings / Reasons for Non-Match */}
+                                                {matchAnalysis.warnings.length > 0 && !isMatch && (
+                                                    <div className="mb-3 p-2 rounded bg-red-500/5 border border-red-500/20">
+                                                        <p className="text-[10px] font-medium text-red-400 mb-1">Por qué no aplica:</p>
+                                                        <ul className="space-y-0.5">
+                                                            {matchAnalysis.warnings.slice(0, 2).map((warning: string, idx: number) => (
+                                                                <li key={idx} className="text-[10px] text-red-300/80 flex items-start gap-1">
+                                                                    <span className="text-red-500 mt-0.5">•</span>
+                                                                    <span className="line-clamp-1">{warning}</span>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
 
                                         <div className="flex items-center justify-between pt-3 border-t border-white/5">
@@ -281,6 +303,10 @@ export default function MarketAnalysisPage() {
                                                     <Target className="w-3 h-3" />
                                                     <span>Misión</span>
                                                 </button>
+                                                <CompetitorHistoryModal
+                                                    unspscCodes={extractUNSPSCFromProcess(proc)}
+                                                    processTitle={proc.descripci_n_del_procedimiento}
+                                                />
                                             </div>
                                         </div>
                                     </motion.div>
