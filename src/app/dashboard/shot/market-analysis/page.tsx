@@ -67,7 +67,6 @@ export default function MarketAnalysisPage() {
             setProcesses(procs);
             setMetrics(insights);
         } catch (error) {
-            console.error("Error searching market:", error);
         } finally {
             setLoading(false);
         }
@@ -198,11 +197,9 @@ export default function MarketAnalysisPage() {
                             </div>
                         ) : processes.length > 0 ? (
                             processes.map((proc, i) => {
-                                // Simple client-side requirement evaluation based on keywords
-                                // In production, this would call the server action
-                                const hasInfraKeywords = proc.descripci_n_del_procedimiento?.toLowerCase().includes('infraestructura') ||
-                                    proc.descripci_n_del_procedimiento?.toLowerCase().includes('obra') ||
-                                    proc.descripci_n_del_procedimiento?.toLowerCase().includes('construccion');
+                                const matchAnalysis = (proc as any).matchAnalysis;
+                                const isMatch = matchAnalysis?.isMatch || false;
+                                const matchScore = matchAnalysis?.matchScore || 0;
 
                                 return (
                                     <motion.div
@@ -212,20 +209,20 @@ export default function MarketAnalysisPage() {
                                         transition={{ delay: i * 0.05 }}
                                         className={cn(
                                             "p-4 rounded-xl border transition-all",
-                                            hasInfraKeywords
-                                                ? "bg-green-500/5 border-green-500/30 hover:border-green-500/50"
+                                            isMatch
+                                                ? "bg-green-500/10 border-green-500/50 hover:border-green-500/70 shadow-lg shadow-green-500/10"
                                                 : "bg-white/5 border-white/10 hover:border-primary/30"
                                         )}
                                     >
                                         <div className="flex justify-between items-start mb-2">
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 flex-wrap">
                                                 <span className="px-2 py-1 rounded text-[10px] font-medium bg-green-500/10 text-green-400 border border-green-500/20 uppercase">
                                                     {proc.fase}
                                                 </span>
-                                                {hasInfraKeywords && (
-                                                    <div className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-green-500/20 text-green-300 border border-green-500/30">
+                                                {isMatch && (
+                                                    <div className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-green-500/20 text-green-300 border border-green-500/40">
                                                         <CheckCircle2 className="w-3 h-3" />
-                                                        <span>Cumples requisitos</span>
+                                                        <span>Compatible {matchScore}%</span>
                                                     </div>
                                                 )}
                                             </div>
@@ -238,6 +235,22 @@ export default function MarketAnalysisPage() {
                                             <Building2 className="w-3 h-3" />
                                             <span className="truncate max-w-[200px]">{proc.entidad}</span>
                                         </div>
+
+                                        {/* Match Analysis Details */}
+                                        {matchAnalysis && matchAnalysis.reasons.length > 0 && (
+                                            <div className="mb-3 p-2 rounded bg-green-500/5 border border-green-500/20">
+                                                <p className="text-[10px] font-medium text-green-400 mb-1">Por qué es compatible:</p>
+                                                <ul className="space-y-0.5">
+                                                    {matchAnalysis.reasons.slice(0, 2).map((reason: string, idx: number) => (
+                                                        <li key={idx} className="text-[10px] text-green-300/80 flex items-start gap-1">
+                                                            <span className="text-green-500 mt-0.5">•</span>
+                                                            <span className="line-clamp-1">{reason}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+
                                         <div className="flex items-center justify-between pt-3 border-t border-white/5">
                                             <div className="text-xs">
                                                 <span className="text-muted-foreground">Cuantía:</span>

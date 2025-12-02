@@ -115,7 +115,52 @@ export async function getMarketStats() {
 // Market search functions for the search page
 export async function searchMarketOpportunities(query: string) {
     // Integrate with SECOP API
-    return await searchSecopProcesses(query, 50);
+    const processes = await searchSecopProcesses(query, 50);
+
+    // Get company data for match analysis
+    const company = await getCompanyData();
+
+    // If no company data, return processes without match analysis
+    if (!company) {
+        return processes.map(p => ({ ...p, matchAnalysis: null }));
+    }
+
+    // Analyze each process for compatibility
+    const { analyzeTenderMatch } = await import('./match-analyzer');
+
+    const processesWithAnalysis = await Promise.all(
+        processes.map(async (process) => {
+            try {
+                const matchAnalysis = await analyzeTenderMatch(process, company);
+
+                // Ensure the object is serializable (plain object, no functions)
+                const serializedAnalysis = {
+                    isMatch: matchAnalysis.isMatch,
+                    matchScore: matchAnalysis.matchScore,
+                    reasons: [...matchAnalysis.reasons],
+                    warnings: [...matchAnalysis.warnings]
+                };
+
+                return {
+                    ...process,
+                    matchAnalysis: serializedAnalysis
+                };
+            } catch (error) {
+                console.error('Error analyzing process:', error);
+                return {
+                    ...process,
+                    matchAnalysis: null
+                };
+            }
+        })
+    );
+
+    // Sort by match score (highest first)
+    return processesWithAnalysis.sort((a, b) => {
+        const scoreA = a.matchAnalysis?.matchScore || 0;
+        const scoreB = b.matchAnalysis?.matchScore || 0;
+        return scoreB - scoreA;
+    });
 }
 
 export async function getMarketInsights(query: string) {

@@ -9,6 +9,9 @@ export interface SecopProcess {
     urlproceso: { url: string } | string;
     tipo_de_contrato: string;
     modalidad_de_contratacion: string;
+    codigo_principal_de_categoria?: string; // UNSPSC code (e.g. V1.80111600)
+    departamento_entidad?: string;
+    ciudad_entidad?: string;
 }
 
 // Using "SECOP II - Procesos de Contratación" dataset
