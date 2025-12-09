@@ -58,10 +58,10 @@ export function Navbar({ userName, userEmail }: NavbarProps) {
                 {/* Right Section */}
                 <div className="flex items-center gap-2 md:gap-3">
                     {/* Notifications */}
-                    <button className="relative p-2 rounded-lg hover:bg-accent transition-colors">
+                    <Link href="/dashboard/notifications" className="relative p-2 rounded-lg hover:bg-accent transition-colors">
                         <Bell className="w-5 h-5 text-muted-foreground" />
-                        <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
-                    </button>
+                        <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+                    </Link>
 
                     {/* Theme Toggle */}
                     <ThemeToggle />

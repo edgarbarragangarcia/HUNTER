@@ -2,6 +2,16 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
+    // Skip auth for API routes, static files, and public assets
+    const path = request.nextUrl.pathname
+    if (
+        path.startsWith('/api/') ||
+        path.startsWith('/_next/') ||
+        path.includes('.') // Files with extensions
+    ) {
+        return NextResponse.next({ request })
+    }
+
     let supabaseResponse = NextResponse.next({
         request,
     })
@@ -42,17 +52,24 @@ export async function updateSession(request: NextRequest) {
     // supabase.auth.getUser(). A simple mistake could make it very hard to debug
     // issues with users being randomly logged out.
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+    // Only check auth for protected routes to speed up navigation
+    if (path.startsWith('/dashboard')) {
+        const {
+            data: { user },
+        } = await supabase.auth.getUser()
 
-    // Protected routes logic
-    if (request.nextUrl.pathname.startsWith('/dashboard') && !user) {
-        return NextResponse.redirect(new URL('/login', request.url))
-    }
+        if (!user) {
+            return NextResponse.redirect(new URL('/login', request.url))
+        }
+    } else if (path === '/') {
+        // Only check user for homepage redirect
+        const {
+            data: { user },
+        } = await supabase.auth.getUser()
 
-    if (request.nextUrl.pathname === '/' && user) {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
+        if (user) {
+            return NextResponse.redirect(new URL('/dashboard', request.url))
+        }
     }
 
     return supabaseResponse

@@ -3,6 +3,7 @@
 import { User, Mail, Calendar, Shield } from "lucide-react";
 import { useState, useTransition } from "react";
 import { updateProfile } from "./actions";
+import TokenCounter from "@/components/dashboard/token-counter";
 
 interface ProfileFormProps {
     user: {
@@ -79,6 +80,11 @@ export default function ProfileForm({ user, profile }: ProfileFormProps) {
                             </div>
                         </div>
                     </div>
+
+                    {/* Token Counter */}
+                    <div className="mt-6">
+                        <TokenCounter />
+                    </div>
                 </div>
 
                 {/* Profile Information */}
@@ -124,8 +130,8 @@ export default function ProfileForm({ user, profile }: ProfileFormProps) {
                             {/* Success/Error Message */}
                             {message && (
                                 <div className={`mb-4 p-3 rounded-lg text-sm ${message.type === "success"
-                                        ? "bg-green-500/10 text-green-500 border border-green-500/20"
-                                        : "bg-red-500/10 text-red-500 border border-red-500/20"
+                                    ? "bg-green-500/10 text-green-500 border border-green-500/20"
+                                    : "bg-red-500/10 text-red-500 border border-red-500/20"
                                     }`}>
                                     {message.text}
                                 </div>

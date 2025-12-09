@@ -20,18 +20,41 @@ export interface SecopProcess {
 const SOCRATA_API_URL = "https://www.datos.gov.co/resource/p6dx-8zbt.json";
 const APP_TOKEN = process.env.SOCRATA_APP_TOKEN; // Optional but recommended
 
-export async function searchSecopProcesses(query: string, limit: number = 20): Promise<SecopProcess[]> {
-    try {
-        // Calculate date threshold (1 month ago - more strict to show only recent/active)
-        const oneMonthAgo = new Date();
-        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-        const dateThreshold = oneMonthAgo.toISOString().split('T')[0];
+export interface MarketFilters {
+    minAmount?: number;
+    maxAmount?: number;
+    status?: 'active' | 'awarded' | 'all';
+}
 
-        // Filter by:
-        // 1. 'Presentación de oferta' to show active opportunities
-        // 2. Published in the last month (likely still open)
-        // 3. Price > 0 to exclude invalid contracts
-        const whereClause = `fase = 'Presentación de oferta' AND fecha_de_publicacion_del >= '${dateThreshold}' AND precio_base > 0`;
+export async function searchSecopProcesses(query: string, limit: number = 20, filters?: MarketFilters): Promise<SecopProcess[]> {
+    try {
+        // Calculate date threshold (1 month ago for active, 6 months for awarded/history)
+        const dateThreshold = new Date();
+        const isHistorySearch = filters?.status === 'awarded' || filters?.status === 'all';
+        dateThreshold.setMonth(dateThreshold.getMonth() - (isHistorySearch ? 6 : 1));
+
+        const dateStr = dateThreshold.toISOString().split('T')[0];
+
+        // Construct where clause
+        let whereClause = `fecha_de_publicacion_del >= '${dateStr}'`;
+
+        // Filter by Status/Phase
+        if (filters?.status === 'active' || !filters?.status) {
+            whereClause += ` AND fase = 'Presentación de oferta'`;
+        } else if (filters?.status === 'awarded') {
+            whereClause += ` AND (fase = 'Adjudicado' OR fase = 'Celebrado')`;
+        }
+        // If 'all', we don't restrict phase
+
+        // Filters for Amount (Cuantía)
+        // We handle this partially in API if possible, but safer in post-processing for mixed string/number types
+        // However, SoQL supports numbers in text columns usually. Let's try to add if provided.
+        if (filters?.minAmount) {
+            whereClause += ` AND precio_base >= ${filters.minAmount}`;
+        }
+        if (filters?.maxAmount) {
+            whereClause += ` AND precio_base <= ${filters.maxAmount}`;
+        }
 
         const url = new URL(SOCRATA_API_URL);
         url.searchParams.append("$limit", limit.toString());
@@ -47,27 +70,35 @@ export async function searchSecopProcesses(query: string, limit: number = 20): P
             headers["X-App-Token"] = APP_TOKEN;
         }
 
-        console.log('Querying SECOP with filters - Date >= ', dateThreshold, ', Price > 0');
+        console.log(`Querying SECOP: ${query} [${filters?.status || 'active'}]`);
 
         const response = await fetch(url.toString(), { headers, next: { revalidate: 3600 } });
 
         if (!response.ok) {
-            throw new Error(`Socrata API error: ${response.statusText}`);
+            console.warn(`Socrata API warning: ${response.statusText}`);
+            // Fallback for simple query if complex filter failed
+            if (filters) {
+                console.log("Retrying with simple query...");
+                return searchSecopProcesses(query, limit); // Retry without filters
+            }
+            return [];
         }
 
         const data = await response.json();
 
-        // Additional client-side filtering for extra safety
+        // Client-side filtering/validation
         const filteredData = data.filter((proc: SecopProcess) => {
             const price = parseFloat(proc.precio_base || '0');
-            const pubDate = new Date(proc.fecha_de_publicacion_del);
-            const isRecent = pubDate >= oneMonthAgo;
             const hasValidPrice = price > 0;
 
-            return isRecent && hasValidPrice;
+            // Re-check amount filters just in case API returned string matches
+            const minOk = !filters?.minAmount || price >= filters.minAmount;
+            const maxOk = !filters?.maxAmount || price <= filters.maxAmount;
+
+            return hasValidPrice && minOk && maxOk;
         });
 
-        console.log(`SECOP returned ${data.length} contracts, ${filteredData.length} after filtering`);
+        console.log(`SECOP returned ${data.length} items, ${filteredData.length} after filter`);
 
         return filteredData as SecopProcess[];
 

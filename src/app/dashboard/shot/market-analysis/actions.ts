@@ -113,9 +113,9 @@ export async function getMarketStats() {
 }
 
 // Market search functions for the search page
-export async function searchMarketOpportunities(query: string) {
+export async function searchMarketOpportunities(query: string, filters?: any) {
     // Integrate with SECOP API
-    const processes = await searchSecopProcesses(query, 50);
+    const processes = await searchSecopProcesses(query, 50, filters);
 
     // Get company data for match analysis
     const company = await getCompanyData();

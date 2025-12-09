@@ -1,6 +1,6 @@
 'use server'
 
-import { CompanyData, calculateCapacity, getExperienceByUNSPSC, getCompanyContracts } from "@/lib/company-data";
+import { CompanyData, calculateCapacity, getExperienceByUNSPSC, getCompanyContracts, Contract } from "@/lib/company-data";
 import { SecopProcess } from "@/lib/socrata";
 import { extractUNSPSCFromProcess } from "./match-helpers";
 
@@ -22,7 +22,8 @@ export interface TenderMatchAnalysis {
  */
 export async function analyzeTenderMatch(
     process: SecopProcess,
-    company: CompanyData
+    company: CompanyData,
+    existingContracts?: Contract[]
 ): Promise<TenderMatchAnalysis> {
     const reasons: string[] = [];
     const warnings: string[] = [];
@@ -51,7 +52,7 @@ export async function analyzeTenderMatch(
     }
 
     // 3. Experience Match (20 points)
-    const experienceMatch = await analyzeExperience(process, company);
+    const experienceMatch = await analyzeExperience(process, company, existingContracts);
     if (experienceMatch.hasExperience) {
         matchScore += 20;
         reasons.push(`Experiencia previa: ${experienceMatch.contractCount} contratos similares`);
@@ -154,7 +155,7 @@ function analyzeFinancialCapacity(process: SecopProcess, company: CompanyData): 
 /**
  * Analyzes if the company has previous experience in similar projects
  */
-async function analyzeExperience(process: SecopProcess, company: CompanyData): Promise<{
+async function analyzeExperience(process: SecopProcess, company: CompanyData, existingContracts?: Contract[]): Promise<{
     hasExperience: boolean;
     contractCount: number;
 }> {
@@ -164,8 +165,8 @@ async function analyzeExperience(process: SecopProcess, company: CompanyData): P
         return { hasExperience: false, contractCount: 0 };
     }
 
-    // Get company contracts
-    const contracts = await getCompanyContracts();
+    // Get company contracts (use cache if provided)
+    const contracts = existingContracts || await getCompanyContracts();
     const experienceByUNSPSC = getExperienceByUNSPSC(contracts);
 
     // Count contracts in matching UNSPSC categories

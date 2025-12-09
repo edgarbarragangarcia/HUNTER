@@ -22,6 +22,10 @@ export default function MarketAnalysisPage() {
     const [loading, setLoading] = useState(true);
     const [userCompany, setUserCompany] = useState<{ id: string; name: string } | null>(null);
 
+    const [minAmount, setMinAmount] = useState<string>("");
+    const [maxAmount, setMaxAmount] = useState<string>("");
+    const [showFilters, setShowFilters] = useState(false);
+
     useEffect(() => {
         // Load initial data
         const loadData = async () => {
@@ -46,6 +50,11 @@ export default function MarketAnalysisPage() {
             let procs: SecopProcess[] = [];
             let insights: any = null;
 
+            const currentFilters = {
+                minAmount: minAmount ? parseFloat(minAmount) : undefined,
+                maxAmount: maxAmount ? parseFloat(maxAmount) : undefined,
+            };
+
             if (isCompanyFilter) {
                 // Search using company's UNSPSC codes
                 procs = await searchOpportunitiesByCompany();
@@ -63,7 +72,7 @@ export default function MarketAnalysisPage() {
             } else {
                 // Standard text search
                 [procs, insights] = await Promise.all([
-                    searchMarketOpportunities(query),
+                    searchMarketOpportunities(query, currentFilters),
                     getMarketInsights(query)
                 ]);
             }
@@ -134,18 +143,31 @@ export default function MarketAnalysisPage() {
 
                 {/* Search Section */}
                 <div className="bg-white/5 border border-white/10 rounded-xl p-4 sticky top-0 backdrop-blur-md z-10">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                        <input
-                            type="text"
-                            placeholder="Buscar por entidad, objeto o código..."
-                            className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
-                        />
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                            <input
+                                type="text"
+                                placeholder="Buscar por entidad, objeto o código..."
+                                className="w-full bg-black/20 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
+                            />
+                        </div>
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className={cn(
+                                "px-4 py-3 rounded-lg border border-white/10 transition-colors flex items-center gap-2",
+                                showFilters ? "bg-primary/20 text-primary border-primary/30" : "bg-black/20 text-muted-foreground hover:bg-white/5"
+                            )}
+                        >
+                            <Filter className="w-4 h-4" />
+                            <span className="hidden md:inline">Filtros</span>
+                        </button>
                     </div>
-                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+
+                    <div className="flex gap-2 overflow-x-auto pb-2 mt-4 scrollbar-hide">
                         {filters.map((filter) => (
                             <button
                                 key={filter.id}
@@ -161,6 +183,43 @@ export default function MarketAnalysisPage() {
                             </button>
                         ))}
                     </div>
+
+                    {showFilters && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            className="mt-4 pt-4 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden"
+                        >
+                            <div className="space-y-2">
+                                <label className="text-xs text-muted-foreground">Cuantía Mínima (COP)</label>
+                                <input
+                                    type="number"
+                                    placeholder="0"
+                                    value={minAmount}
+                                    onChange={(e) => setMinAmount(e.target.value)}
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs text-muted-foreground">Cuantía Máxima (COP)</label>
+                                <input
+                                    type="number"
+                                    placeholder="Sin límite"
+                                    value={maxAmount}
+                                    onChange={(e) => setMaxAmount(e.target.value)}
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+                                />
+                            </div>
+                            <div className="col-span-full flex justify-end">
+                                <button
+                                    onClick={() => handleSearch(searchQuery || activeFilter)}
+                                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90"
+                                >
+                                    Aplicar Filtros
+                                </button>
+                            </div>
+                        </motion.div>
+                    )}
                 </div>
 
                 {/* KPI Cards */}

@@ -2,9 +2,21 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 import { Navbar } from "@/components/dashboard/navbar";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 import { DashboardProvider } from "@/components/dashboard/dashboard-context";
 import { DashboardMainContent } from "@/components/dashboard/dashboard-main-content";
+
+// Cache the user profile fetch to avoid redundant queries
+const getUserProfile = cache(async (userId: string) => {
+    const supabase = await createClient();
+    return await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("user_id", userId)
+        .limit(1)
+        .single();
+});
 
 export default async function DashboardLayout({
     children,
@@ -20,13 +32,8 @@ export default async function DashboardLayout({
         redirect("/login");
     }
 
-    // Get user's full name from profile
-    const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("user_id", user.id)
-        .limit(1)
-        .single();
+    // Get user's full name from profile with caching
+    const { data: profile } = await getUserProfile(user.id);
 
     return (
         <DashboardProvider>

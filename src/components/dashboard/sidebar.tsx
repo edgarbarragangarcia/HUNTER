@@ -19,11 +19,11 @@ import {
     BarChart3,
     Activity,
     Trophy,
-    PieChart
+    PieChart,
+    Calendar
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
 import { useDashboard } from "./dashboard-context";
 
 interface SidebarItem {
@@ -39,6 +39,7 @@ const sidebarLinks: SidebarItem[] = [
         href: "/dashboard",
         icon: LayoutDashboard,
     },
+
     {
         name: "Perfil de Empresa",
         href: "/dashboard/company",
@@ -86,6 +87,11 @@ const sidebarLinks: SidebarItem[] = [
         href: "/dashboard/missions",
         icon: Rocket,
     },
+    {
+        name: "Calendario",
+        href: "/dashboard/calendar",
+        icon: Calendar,
+    },
 ];
 
 export function Sidebar({ }: { userEmail?: string; userName?: string | null }) {
@@ -94,7 +100,6 @@ export function Sidebar({ }: { userEmail?: string; userName?: string | null }) {
     const [isDesktop, setIsDesktop] = useState(false);
     const { isCollapsed, toggleCollapse } = useDashboard();
     const [expandedItems, setExpandedItems] = useState<string[]>([]);
-    const router = useRouter();
 
     useEffect(() => {
         const checkDesktop = () => {
@@ -154,7 +159,7 @@ export function Sidebar({ }: { userEmail?: string; userName?: string | null }) {
                     >
                         {/* Header */}
                         <div className="h-16 flex items-center justify-between px-6 border-b border-border">
-                            <Link href="/dashboard" className="flex items-center gap-2">
+                            <Link href="/dashboard" prefetch={true} className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
                                     <Search className="w-4 h-4 text-primary" />
                                 </div>
@@ -181,36 +186,49 @@ export function Sidebar({ }: { userEmail?: string; userName?: string | null }) {
 
                                 return (
                                     <div key={link.name}>
-                                        <div
-                                            className={cn(
-                                                "flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-colors cursor-pointer",
-                                                isActive
-                                                    ? "bg-primary/10 text-primary border border-primary/20"
-                                                    : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                                            )}
-                                            onClick={() => {
-                                                if (hasSubItems) {
-                                                    toggleExpand(link.name);
-                                                } else {
-                                                    router.push(link.href);
-                                                    setIsMobileOpen(false);
-                                                }
-                                            }}
-                                            title={isCollapsed ? link.name : undefined}
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <link.icon className="w-5 h-5 flex-shrink-0" />
-                                                {!isCollapsed && <span>{link.name}</span>}
+                                        {hasSubItems ? (
+                                            <div
+                                                className={cn(
+                                                    "flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-colors cursor-pointer",
+                                                    isActive
+                                                        ? "bg-primary/10 text-primary border border-primary/20"
+                                                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                                                )}
+                                                onClick={() => toggleExpand(link.name)}
+                                                title={isCollapsed ? link.name : undefined}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <link.icon className="w-5 h-5 flex-shrink-0" />
+                                                    {!isCollapsed && <span>{link.name}</span>}
+                                                </div>
+                                                {!isCollapsed && (
+                                                    <ChevronDown
+                                                        className={cn(
+                                                            "w-4 h-4 transition-transform",
+                                                            isExpanded ? "transform rotate-180" : ""
+                                                        )}
+                                                    />
+                                                )}
                                             </div>
-                                            {!isCollapsed && hasSubItems && (
-                                                <ChevronDown
-                                                    className={cn(
-                                                        "w-4 h-4 transition-transform",
-                                                        isExpanded ? "transform rotate-180" : ""
-                                                    )}
-                                                />
-                                            )}
-                                        </div>
+                                        ) : (
+                                            <Link
+                                                href={link.href}
+                                                prefetch={true}
+                                                className={cn(
+                                                    "flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-colors",
+                                                    isActive
+                                                        ? "bg-primary/10 text-primary border border-primary/20"
+                                                        : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                                                )}
+                                                onClick={() => setIsMobileOpen(false)}
+                                                title={isCollapsed ? link.name : undefined}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <link.icon className="w-5 h-5 flex-shrink-0" />
+                                                    {!isCollapsed && <span>{link.name}</span>}
+                                                </div>
+                                            </Link>
+                                        )}
 
                                         {/* Sub-items */}
                                         <AnimatePresence>
@@ -228,6 +246,7 @@ export function Sidebar({ }: { userEmail?: string; userName?: string | null }) {
                                                             <Link
                                                                 key={subItem.href}
                                                                 href={subItem.href}
+                                                                prefetch={true}
                                                                 onClick={() => setIsMobileOpen(false)}
                                                                 className={cn(
                                                                     "flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
