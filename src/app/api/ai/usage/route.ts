@@ -29,7 +29,7 @@ export async function GET() {
                 total_tokens: 0,
                 prompt_tokens: 0,
                 completion_tokens: 0,
-                model: 'gpt-4-turbo',
+                model: 'No Data',
                 total_requests: 0,
                 total_cost: 0,
                 last_usage: new Date().toISOString()
@@ -42,7 +42,7 @@ export async function GET() {
                 total_tokens: 0,
                 prompt_tokens: 0,
                 completion_tokens: 0,
-                model: 'gpt-4-turbo',
+                model: 'No Data',
                 total_requests: 0,
                 total_cost: 0,
                 last_usage: new Date().toISOString()
@@ -54,7 +54,7 @@ export async function GET() {
             total_tokens: stats.total_tokens || 0,
             prompt_tokens: stats.prompt_tokens || 0,
             completion_tokens: stats.completion_tokens || 0,
-            model: stats.primary_model || 'gpt-4-turbo',
+            model: stats.primary_model || 'No Data',
             total_requests: stats.total_requests || 0,
             total_cost: stats.total_cost || 0,
             last_usage: stats.last_usage || new Date().toISOString()
@@ -89,8 +89,8 @@ export async function POST(request: Request) {
             total_tokens,
             prompt_tokens,
             completion_tokens,
-            model = 'gpt-4-turbo',
-            provider = 'openai',
+            model = 'gemini-2.5-flash-lite',
+            provider = 'google',
             feature,
             request_type,
             estimated_cost

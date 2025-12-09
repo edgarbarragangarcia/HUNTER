@@ -128,10 +128,13 @@ export async function searchMarketOpportunities(query: string, filters?: any) {
     // Analyze each process for compatibility
     const { analyzeTenderMatch } = await import('./match-analyzer');
 
+    // Optimization: Fetch contracts once to avoid N+1 queries
+    const contracts = await getCompanyContracts();
+
     const processesWithAnalysis = await Promise.all(
         processes.map(async (process) => {
             try {
-                const matchAnalysis = await analyzeTenderMatch(process, company);
+                const matchAnalysis = await analyzeTenderMatch(process, company, contracts);
 
                 // Ensure the object is serializable (plain object, no functions)
                 const serializedAnalysis = {
@@ -192,10 +195,13 @@ export async function searchOpportunitiesByCompany() {
     // Add match analysis just like in searchMarketOpportunities
     const { analyzeTenderMatch } = await import('./match-analyzer');
 
+    // Optimization: Fetch contracts once
+    const contracts = await getCompanyContracts();
+
     const processesWithAnalysis = await Promise.all(
         processes.map(async (process) => {
             try {
-                const matchAnalysis = await analyzeTenderMatch(process, company);
+                const matchAnalysis = await analyzeTenderMatch(process, company, contracts);
 
                 // Ensure the object is serializable (plain object, no functions)
                 const serializedAnalysis = {
