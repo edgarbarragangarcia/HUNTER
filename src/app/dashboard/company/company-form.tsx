@@ -336,24 +336,16 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                         <div className="text-right">
                             <p className="text-2xl font-bold text-primary">
                                 {(() => {
-                                    // Calculate completion percentage
                                     let completed = 0;
-                                    let total = 7; // Total sections to complete
-
-                                    // Check company basic info (5 required fields)
                                     if (company?.company_name) completed += 0.2;
                                     if (company?.nit) completed += 0.2;
                                     if (company?.legal_representative) completed += 0.2;
                                     if (company?.economic_sector) completed += 0.2;
                                     if (company?.address && company?.city) completed += 0.2;
-
-                                    // Check documents
                                     if (documentsByCategory.legal.length > 0) completed += 1;
                                     if (documentsByCategory.financial.length > 0) completed += 1;
-                                    if (documentsByCategory.technical.length > 0) completed += 1;
-
-                                    const percentage = Math.round((completed / 4) * 100);
-                                    return percentage;
+                                    if (documentsByCategory.technical.length > 0 || contracts.length > 0) completed += 1;
+                                    return Math.round((completed / 4) * 100);
                                 })()}%
                             </p>
                             <p className="text-xs text-zinc-500">completado</p>
@@ -373,7 +365,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                     if (company?.address && company?.city) completed += 0.2;
                                     if (documentsByCategory.legal.length > 0) completed += 1;
                                     if (documentsByCategory.financial.length > 0) completed += 1;
-                                    if (documentsByCategory.technical.length > 0) completed += 1;
+                                    if (documentsByCategory.technical.length > 0 || contracts.length > 0) completed += 1;
                                     return Math.round((completed / 4) * 100);
                                 })()}%`
                             }}
@@ -418,9 +410,9 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                         </div>
                         <div className={cn(
                             "flex items-center gap-2 text-xs",
-                            documentsByCategory.technical.length > 0 ? "text-primary" : "text-zinc-500"
+                            (documentsByCategory.technical.length > 0 || contracts.length > 0) ? "text-primary" : "text-zinc-500"
                         )}>
-                            {documentsByCategory.technical.length > 0 ? (
+                            {(documentsByCategory.technical.length > 0 || contracts.length > 0) ? (
                                 <Check className="w-4 h-4" />
                             ) : (
                                 <div className="w-4 h-4 rounded-full border-2 border-zinc-600" />
