@@ -26,7 +26,8 @@ export interface TenderMatchAnalysis {
 export async function analyzeTenderMatch(
     process: SecopProcess,
     company: CompanyData,
-    existingContracts?: Contract[]
+    existingContracts?: Contract[],
+    aiOverride?: { isCorporate?: boolean, isActionable?: boolean, advice?: string }
 ): Promise<TenderMatchAnalysis> {
     const reasons: string[] = [];
     const warnings: string[] = [];
@@ -80,7 +81,8 @@ export async function analyzeTenderMatch(
     const corporateContracts = ["Obra", "Suministro", "Compraventa", "Consultoría", "Interventoría"];
     const isCorporateType = corporateContracts.some(type => process.tipo_de_contrato?.includes(type));
 
-    const isCorporate = isCorporateType || !isNaturalPerson;
+    // Use AI override if available, otherwise use rules
+    const isCorporate = aiOverride?.isCorporate !== undefined ? aiOverride.isCorporate : (isCorporateType || !isNaturalPerson);
 
     if (!isCorporate) {
         matchScore = Math.max(0, matchScore - 40); // Heavy penalty for personal services
@@ -88,31 +90,33 @@ export async function analyzeTenderMatch(
     }
 
     matchScore = Math.min(100, matchScore);
-    const isActionable = process.fase === 'Presentación de oferta';
+    const isActionable = aiOverride?.isActionable !== undefined ? aiOverride.isActionable : (process.fase === 'Presentación de oferta');
     const isMatch = isCorporate && matchScore >= 60; // Increased threshold and must be corporate
 
     // Strategic AI Advice
-    let advice = "";
-    if (!isActionable) {
-        advice = `Estrategia: Este proceso ya no recibe ofertas (Fase: ${process.fase || 'Iniciada'}). Úsalo solo para análisis de mercado o histórico.`;
-    } else if (matchScore < 60) {
-        if (!unspscMatch.hasMatch) {
-            advice = "Estrategia: Este proceso requiere códigos UNSPSC que no tienes registrados. Considera actualizar tu RUP o buscar un socio que ya cuente con estos códigos.";
-        } else if (!capacityMatch.hasCapacity) {
-            advice = "Estrategia: Tu capacidad financiera (K) es insuficiente para este monto. Recomendamos buscar un socio con mayor capital para presentarse en Consorcio o Unión Temporal.";
-        } else if (!experienceMatch.hasExperience) {
-            advice = "Estrategia: Tienes los códigos pero no la experiencia técnica demostrable. Busca una alianza estratégica con una empresa que aporte los contratos requeridos.";
+    let advice = aiOverride?.advice || "";
+    if (!advice) {
+        if (!isActionable) {
+            advice = `Estrategia: Este proceso ya no recibe ofertas (Fase: ${process.fase || 'Iniciada'}). Úsalo solo para análisis de mercado o histórico.`;
+        } else if (matchScore < 60) {
+            if (!unspscMatch.hasMatch) {
+                advice = "Estrategia: Este proceso requiere códigos UNSPSC que no tienes registrados. Considera actualizar tu RUP o buscar un socio que ya cuente con estos códigos.";
+            } else if (!capacityMatch.hasCapacity) {
+                advice = "Estrategia: Tu capacidad financiera (K) es insuficiente para este monto. Recomendamos buscar un socio con mayor capital para presentarse en Consorcio o Unión Temporal.";
+            } else if (!experienceMatch.hasExperience) {
+                advice = "Estrategia: Tienes los códigos pero no la experiencia técnica demostrable. Busca una alianza estratégica con una empresa que aporte los contratos requeridos.";
+            } else {
+                advice = "Estrategia: El perfil de este proceso es retador. Una alianza con un socio estratégico aumentaría drásticamente tus probabilidades de éxito.";
+            }
+        } else if (matchScore < 90) {
+            if (!capacityMatch.hasCapacity) {
+                advice = "Tip: Tienes la experiencia pero la capacidad K está ajustada. Un socio financiero podría fortalecer tu oferta.";
+            } else {
+                advice = "Tip: Eres un buen candidato. Asegúrate de resaltar tu experiencia específica en los entregables técnicos.";
+            }
         } else {
-            advice = "Estrategia: El perfil de este proceso es retador. Una alianza con un socio estratégico aumentaría drásticamente tus probabilidades de éxito.";
+            advice = "Tip: Tienes un perfil excelente para este proceso. Enfócate en la competitividad de tu oferta económica.";
         }
-    } else if (matchScore < 90) {
-        if (!capacityMatch.hasCapacity) {
-            advice = "Tip: Tienes la experiencia pero la capacidad K está ajustada. Un socio financiero podría fortalecer tu oferta.";
-        } else {
-            advice = "Tip: Eres un buen candidato. Asegúrate de resaltar tu experiencia específica en los entregables técnicos.";
-        }
-    } else {
-        advice = "Tip: Tienes un perfil excelente para este proceso. Enfócate en la competitividad de tu oferta económica.";
     }
 
     return {

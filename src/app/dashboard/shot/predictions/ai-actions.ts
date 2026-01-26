@@ -9,6 +9,13 @@ export interface TenderAnalysis {
     summary: string;
 }
 
+export interface AIProcessClassification {
+    id: string;
+    isCorporate: boolean;
+    isActionable: boolean;
+    advice: string;
+}
+
 /**
  * Analyzes a tender description to extract key deliverables and requirements
  */
@@ -46,5 +53,53 @@ export async function analyzeTenderDescription(description: string, title: strin
     } catch (error) {
         console.error("Error analyzing tender description:", error);
         return null;
+    }
+}
+
+/**
+ * Classifies a batch of processes using AI
+ */
+export async function classifyProcessesAI(processes: { id: string, title: string, description: string }[]): Promise<AIProcessClassification[]> {
+    if (processes.length === 0) return [];
+
+    try {
+        const engine = AIEngine.getInstance();
+
+        const processesText = processes.map(p => `ID: ${p.id}\nTÍTULO: ${p.title}\nDESCRIPCIÓN: ${p.description.substring(0, 300)}...`).join('\n---\n');
+
+        const prompt = `
+        Analiza el siguiente lote de licitaciones públicas en Colombia y clasifícalas para una EMPRESA.
+        
+        REGLAS DE CLASIFICACIÓN:
+        1. isCorporate: TRUE si el contrato es para una empresa (Obra, Suministro, Consultoría, Compraventa). FALSE si es "Prestación de servicios de apoyo a la gestión" o similar, destinado claramente a una Persona Natural.
+        2. isActionable: TRUE si el proceso está abierto a recibir ofertas hoy. FALSE si parece haber pasado la fecha o ya está en ejecución.
+        3. advice: Un consejo táctico corto (máx 15 palabras). Ej: "Aliarse con socio financiero", "Ideal para pyme local", "Requiere RUP actualizado".
+        
+        LOTE DE PROCESOS:
+        ${processesText}
+        
+        Genera un JSON que sea UN ARRAY de objetos con esta estructura:
+        [
+            {
+                "id": "el ID proporcionado",
+                "isCorporate": boolean,
+                "isActionable": boolean,
+                "advice": "string"
+            }
+        ]
+        
+        IMPORTANT: Responde SOLO con el JSON.
+        `;
+
+        const response = await engine.generateJSON<AIProcessClassification[]>(prompt, "Array of AIProcessClassification objects");
+
+        if (response.success && response.data) {
+            return response.data;
+        }
+
+        return [];
+    } catch (error) {
+        console.error("Error in classifyProcessesAI:", error);
+        return [];
     }
 }

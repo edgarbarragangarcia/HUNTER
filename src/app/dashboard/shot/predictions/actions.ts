@@ -3,6 +3,7 @@
 import { getCompanyData, getCompanyContracts, calculateCapacity, getExperienceByUNSPSC } from "@/lib/company-data";
 import { searchOpportunitiesByUNSPSC } from "@/lib/socrata";
 import { analyzeTenderMatch } from "../market-analysis/match-analyzer";
+import { classifyProcessesAI } from "./ai-actions";
 
 /**
  * Get prediction statistics based on real SECOP data
@@ -73,10 +74,28 @@ export async function getOpportunities() {
 
     if (processes.length === 0) return [];
 
+    // AI Classification in batches
+    const BATCH_SIZE = 15;
+    const aiClassifications: any[] = [];
+
+    // Analyze first 40 for good balance
+    const processesToAnalyze = processes.slice(0, 40);
+
+    for (let i = 0; i < processesToAnalyze.length; i += BATCH_SIZE) {
+        const batch = processesToAnalyze.slice(i, i + BATCH_SIZE);
+        const classifiedBatch = await classifyProcessesAI(batch.map(p => ({
+            id: p.id_del_proceso,
+            title: p.descripci_n_del_procedimiento,
+            description: p.descripci_n_del_procedimiento
+        })));
+        aiClassifications.push(...classifiedBatch);
+    }
+
     // Analyze and score each process
     const scoredProcesses = await Promise.all(
         processes.map(async (proc) => {
-            const analysis = await analyzeTenderMatch(proc, company);
+            const aiOverride = aiClassifications.find(c => c.id === proc.id_del_proceso);
+            const analysis = await analyzeTenderMatch(proc, company, undefined, aiOverride);
 
             let reason = "";
             const score = analysis.matchScore;
@@ -100,6 +119,7 @@ export async function getOpportunities() {
                 advice: analysis.advice,
                 isCorporate: analysis.isCorporate,
                 isActionable: analysis.isActionable,
+                isAIPowered: !!aiOverride,
                 description: proc.descripci_n_del_procedimiento, // Keep description for AI analysis
                 aiAnalysis: null as TenderAnalysis | null
             };

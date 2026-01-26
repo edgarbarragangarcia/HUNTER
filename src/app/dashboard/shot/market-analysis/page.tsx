@@ -350,6 +350,11 @@ export default function MarketAnalysisPage() {
                                                         <span>Compatible {matchScore}%</span>
                                                     </div>
                                                 )}
+                                                {matchAnalysis?.isAIPowered && (
+                                                    <div className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                                                        <span>✨ IA</span>
+                                                    </div>
+                                                )}
                                             </div>
                                             <span className="text-xs text-muted-foreground">{new Date(proc.fecha_de_publicacion_del).toLocaleDateString()}</span>
                                         </div>

@@ -105,6 +105,11 @@ export default async function PredictionsPage() {
                                                             Persona Natural
                                                         </span>
                                                     )}
+                                                    {opp.isAIPowered && (
+                                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                                            ✨ IA
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <h3 className="font-semibold line-clamp-1">{opp.title}</h3>
                                                 <p className="text-sm text-muted-foreground">{opp.entity}</p>

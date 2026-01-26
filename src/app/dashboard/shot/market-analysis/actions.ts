@@ -2,7 +2,8 @@
 
 import { getCompanyData, getCompanyContracts, getExperienceByUNSPSC, getContractStats } from "@/lib/company-data";
 import { createClient } from "@/lib/supabase/server";
-import { searchSecopProcesses, getMarketMetrics, searchOpportunitiesByUNSPSC } from "@/lib/socrata";
+import { searchSecopProcesses, getMarketMetrics, searchOpportunitiesByUNSPSC, SecopProcess } from "@/lib/socrata";
+import { classifyProcessesAI } from "../predictions/ai-actions";
 
 export async function getMarketTrends() {
     const company = await getCompanyData();
@@ -120,9 +121,26 @@ export async function searchMarketOpportunities(query: string, filters?: any) {
     // Get company data for match analysis
     const company = await getCompanyData();
 
-    // If no company data, return processes without match analysis
+    // If no company data, return processes as are
     if (!company) {
         return processes.map(p => ({ ...p, matchAnalysis: null }));
+    }
+
+    // AI Classification in batches for better precision
+    const BATCH_SIZE = 20;
+    const aiClassifications: any[] = [];
+
+    // We only analyze the first 60 for cost/speed balance, the rest use rule-based fallback
+    const processesToAnalyze = processes.slice(0, 60);
+
+    for (let i = 0; i < processesToAnalyze.length; i += BATCH_SIZE) {
+        const batch = processesToAnalyze.slice(i, i + BATCH_SIZE);
+        const classifiedBatch = await classifyProcessesAI(batch.map(p => ({
+            id: p.id_del_proceso,
+            title: p.descripci_n_del_procedimiento,
+            description: p.descripci_n_del_procedimiento
+        })));
+        aiClassifications.push(...classifiedBatch);
     }
 
     // Analyze each process for compatibility
@@ -134,7 +152,8 @@ export async function searchMarketOpportunities(query: string, filters?: any) {
     const processesWithAnalysis = await Promise.all(
         processes.map(async (process) => {
             try {
-                const matchAnalysis = await analyzeTenderMatch(process, company, contracts);
+                const aiOverride = aiClassifications.find(c => c.id === process.id_del_proceso);
+                const matchAnalysis = await analyzeTenderMatch(process, company, contracts, aiOverride);
 
                 // Ensure the object is serializable (plain object, no functions)
                 const serializedAnalysis = {
@@ -144,7 +163,8 @@ export async function searchMarketOpportunities(query: string, filters?: any) {
                     warnings: [...matchAnalysis.warnings],
                     advice: matchAnalysis.advice,
                     isCorporate: matchAnalysis.isCorporate,
-                    isActionable: matchAnalysis.isActionable
+                    isActionable: matchAnalysis.isActionable,
+                    isAIPowered: !!aiOverride
                 };
 
                 return {
@@ -204,6 +224,26 @@ export async function searchOpportunitiesByCompany() {
     // Increased limit to 150
     const processes = await searchOpportunitiesByUNSPSC(company.unspsc_codes, 150);
 
+    // If no company data, return empty list
+    if (!company) return [];
+
+    // AI Classification in batches
+    const BATCH_SIZE = 20;
+    const aiClassifications: any[] = [];
+
+    // Analyze first 60 for high precision
+    const processesToAnalyze = processes.slice(0, 60);
+
+    for (let i = 0; i < processesToAnalyze.length; i += BATCH_SIZE) {
+        const batch = processesToAnalyze.slice(i, i + BATCH_SIZE);
+        const classifiedBatch = await classifyProcessesAI(batch.map(p => ({
+            id: p.id_del_proceso,
+            title: p.descripci_n_del_procedimiento,
+            description: p.descripci_n_del_procedimiento
+        })));
+        aiClassifications.push(...classifiedBatch);
+    }
+
     // Add match analysis just like in searchMarketOpportunities
     const { analyzeTenderMatch } = await import('./match-analyzer');
 
@@ -213,7 +253,8 @@ export async function searchOpportunitiesByCompany() {
     const processesWithAnalysis = await Promise.all(
         processes.map(async (process) => {
             try {
-                const matchAnalysis = await analyzeTenderMatch(process, company, contracts);
+                const aiOverride = aiClassifications.find(c => c.id === process.id_del_proceso);
+                const matchAnalysis = await analyzeTenderMatch(process, company, contracts, aiOverride);
 
                 // Ensure the object is serializable (plain object, no functions)
                 const serializedAnalysis = {
@@ -223,7 +264,8 @@ export async function searchOpportunitiesByCompany() {
                     warnings: [...matchAnalysis.warnings],
                     advice: matchAnalysis.advice,
                     isCorporate: matchAnalysis.isCorporate,
-                    isActionable: matchAnalysis.isActionable
+                    isActionable: matchAnalysis.isActionable,
+                    isAIPowered: !!aiOverride
                 };
 
                 return {
