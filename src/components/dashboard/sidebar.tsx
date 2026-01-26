@@ -55,11 +55,7 @@ const sidebarLinks: SidebarItem[] = [
                 href: "/dashboard/shot/predictions",
                 icon: LineChart,
             },
-            {
-                name: "Monitor",
-                href: "/dashboard/shot/monitor",
-                icon: Activity,
-            },
+
             {
                 name: "Ranking",
                 href: "/dashboard/shot/ranking",
