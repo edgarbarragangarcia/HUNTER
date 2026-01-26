@@ -110,6 +110,11 @@ export default async function PredictionsPage() {
                                                     </div>
                                                 </div>
                                             )}
+                                            {opp.advice && (
+                                                <div className="mt-2 p-2 rounded bg-indigo-500/10 border border-indigo-500/20 text-[10px] text-indigo-300 italic">
+                                                    {opp.advice}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))

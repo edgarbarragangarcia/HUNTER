@@ -18,8 +18,8 @@ export async function getPredictionStats() {
         };
     }
 
-    // Fetch real opportunities from SECOP using company's UNSPSC codes
-    const processes = await searchOpportunitiesByUNSPSC(company.unspsc_codes, 50);
+    // Fetch real opportunities from SECOP using company's UNSPSC codes - Increased limit to 100
+    const processes = await searchOpportunitiesByUNSPSC(company.unspsc_codes, 100);
 
     if (processes.length === 0) {
         return {
@@ -68,8 +68,8 @@ export async function getOpportunities() {
         return [];
     }
 
-    // Fetch real opportunities from SECOP
-    const processes = await searchOpportunitiesByUNSPSC(company.unspsc_codes, 50);
+    // Fetch real opportunities from SECOP - Increased limit to 100
+    const processes = await searchOpportunitiesByUNSPSC(company.unspsc_codes, 100);
 
     if (processes.length === 0) return [];
 
@@ -97,6 +97,7 @@ export async function getOpportunities() {
                 closingDate: proc.fecha_de_publicacion_del,
                 matchScore: score,
                 reason: reason || analysis.reasons[0] || analysis.warnings[0] || "Compatible con tu perfil",
+                advice: analysis.advice,
                 description: proc.descripci_n_del_procedimiento, // Keep description for AI analysis
                 aiAnalysis: null as TenderAnalysis | null
             };

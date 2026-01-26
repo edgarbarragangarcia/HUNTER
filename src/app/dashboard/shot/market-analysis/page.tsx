@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Search, Filter, TrendingUp, DollarSign, Users, ArrowLeft, Building2, FileText, Loader2, ExternalLink, Target, CheckCircle2 } from "lucide-react";
+import { Search, Filter, TrendingUp, DollarSign, Users, ArrowLeft, Building2, FileText, Loader2, ExternalLink, Target, CheckCircle2, Bot } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -360,6 +360,17 @@ export default function MarketAnalysisPage() {
                                                                 </li>
                                                             ))}
                                                         </ul>
+                                                    </div>
+                                                )}
+                                                {/* Strategic Advice section */}
+                                                {matchAnalysis.advice && (
+                                                    <div className="mb-3 p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-start gap-3 shadow-sm">
+                                                        <div className="mt-0.5 p-1 rounded bg-indigo-500/20">
+                                                            <Bot className="w-3.5 h-3.5 text-indigo-400" />
+                                                        </div>
+                                                        <p className="text-xs text-indigo-200 font-medium leading-relaxed italic">
+                                                            {matchAnalysis.advice}
+                                                        </p>
                                                     </div>
                                                 )}
                                             </>

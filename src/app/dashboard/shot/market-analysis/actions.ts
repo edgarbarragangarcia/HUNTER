@@ -114,8 +114,8 @@ export async function getMarketStats() {
 
 // Market search functions for the search page
 export async function searchMarketOpportunities(query: string, filters?: any) {
-    // Integrate with SECOP API
-    const processes = await searchSecopProcesses(query, 50, filters);
+    // Integrate with SECOP API - Increased limit to 150
+    const processes = await searchSecopProcesses(query, 150, filters);
 
     // Get company data for match analysis
     const company = await getCompanyData();
@@ -141,7 +141,8 @@ export async function searchMarketOpportunities(query: string, filters?: any) {
                     isMatch: matchAnalysis.isMatch,
                     matchScore: matchAnalysis.matchScore,
                     reasons: [...matchAnalysis.reasons],
-                    warnings: [...matchAnalysis.warnings]
+                    warnings: [...matchAnalysis.warnings],
+                    advice: matchAnalysis.advice
                 };
 
                 return {
@@ -190,7 +191,8 @@ export async function searchOpportunitiesByCompany() {
         return [];
     }
 
-    const processes = await searchOpportunitiesByUNSPSC(company.unspsc_codes, 50);
+    // Increased limit to 150
+    const processes = await searchOpportunitiesByUNSPSC(company.unspsc_codes, 150);
 
     // Add match analysis just like in searchMarketOpportunities
     const { analyzeTenderMatch } = await import('./match-analyzer');
@@ -208,7 +210,8 @@ export async function searchOpportunitiesByCompany() {
                     isMatch: matchAnalysis.isMatch,
                     matchScore: matchAnalysis.matchScore,
                     reasons: [...matchAnalysis.reasons],
-                    warnings: [...matchAnalysis.warnings]
+                    warnings: [...matchAnalysis.warnings],
+                    advice: matchAnalysis.advice
                 };
 
                 return {
