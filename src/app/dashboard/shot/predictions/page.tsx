@@ -103,9 +103,11 @@ export default async function PredictionsPage() {
                                                 <span>Cierre: {formatDate(opp.closingDate)}</span>
                                             </div>
                                             {opp.reason && (
-                                                <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400 w-full md:w-auto mt-2 md:mt-0">
-                                                    <Brain className="h-3 w-3" />
-                                                    <span className="text-xs">{opp.reason}</span>
+                                                <div className="flex flex-col gap-1 w-full mt-2">
+                                                    <div className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                                                        <Brain className="h-3 w-3" />
+                                                        <span className="text-xs font-medium">{opp.reason}</span>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>

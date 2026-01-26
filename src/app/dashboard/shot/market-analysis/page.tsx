@@ -338,14 +338,25 @@ export default function MarketAnalysisPage() {
                                                 )}
 
                                                 {/* Warnings / Reasons for Non-Match */}
-                                                {matchAnalysis.warnings.length > 0 && !isMatch && (
-                                                    <div className="mb-3 p-2 rounded bg-red-500/5 border border-red-500/20">
-                                                        <p className="text-[10px] font-medium text-red-400 mb-1">Por qué no aplica:</p>
+                                                {matchAnalysis.warnings.length > 0 && (
+                                                    <div className={cn(
+                                                        "mb-3 p-2 rounded border",
+                                                        isMatch ? "bg-yellow-500/5 border-yellow-500/20" : "bg-red-500/5 border-red-500/20"
+                                                    )}>
+                                                        <p className={cn(
+                                                            "text-[10px] font-medium mb-1",
+                                                            isMatch ? "text-yellow-400" : "text-red-400"
+                                                        )}>
+                                                            {isMatch ? "Observaciones:" : "Factores de no-match:"}
+                                                        </p>
                                                         <ul className="space-y-0.5">
-                                                            {matchAnalysis.warnings.slice(0, 2).map((warning: string, idx: number) => (
-                                                                <li key={idx} className="text-[10px] text-red-300/80 flex items-start gap-1">
-                                                                    <span className="text-red-500 mt-0.5">•</span>
-                                                                    <span className="line-clamp-1">{warning}</span>
+                                                            {matchAnalysis.warnings.map((warning: string, idx: number) => (
+                                                                <li key={idx} className={cn(
+                                                                    "text-[10px] flex items-start gap-1",
+                                                                    isMatch ? "text-yellow-300/80" : "text-red-300/80"
+                                                                )}>
+                                                                    <span className={isMatch ? "text-yellow-500" : "text-red-500"}>•</span>
+                                                                    <span>{warning}</span>
                                                                 </li>
                                                             ))}
                                                         </ul>

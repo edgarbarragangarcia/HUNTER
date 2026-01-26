@@ -29,46 +29,47 @@ export async function analyzeTenderMatch(
     const warnings: string[] = [];
     let matchScore = 0;
 
-    // 1. UNSPSC Code Match (40 points)
+    // Pillar 1: Jurídico (UNSPSC Match) - 30%
     const unspscMatch = analyzeUNSPSCMatch(process, company);
     if (unspscMatch.hasMatch) {
-        matchScore += 40;
-        reasons.push(`Código UNSPSC compatible: ${unspscMatch.matchedCodes.join(', ')}`);
+        matchScore += 30;
+        reasons.push(`Pilar Jurídico: Códigos UNSPSC compatibles (${unspscMatch.matchedCodes[0]})`);
     } else {
-        warnings.push('No hay coincidencia en códigos UNSPSC');
+        warnings.push('Pilar Jurídico: No hay coincidencia en códigos UNSPSC registrados en tu perfil');
     }
 
-    // 2. Financial Capacity (30 points)
+    // Pillar 2: Financiero (Capacidad K) - 30%
     const capacityMatch = analyzeFinancialCapacity(process, company);
     if (capacityMatch.hasCapacity) {
         matchScore += 30;
-        reasons.push(`Capacidad financiera suficiente (${capacityMatch.percentage}%)`);
+        reasons.push(`Pilar Financiero: Capacidad K suficiente (${capacityMatch.percentage}%)`);
     } else {
         if (company.financial_indicators) {
-            warnings.push(`Requiere ${capacityMatch.requiredCapacity} pero tienes ${capacityMatch.availableCapacity}`);
+            const diff = capacityMatch.requiredAmount - capacityMatch.availableAmount;
+            warnings.push(`Pilar Financiero: Capacidad insuficiente. Faltan ${formatCurrency(diff)} para cubrir el presupuesto`);
         } else {
-            warnings.push('Configura tus indicadores financieros para validar capacidad');
+            warnings.push('Pilar Financiero: No has configurado tus indicadores financieros (Liquidez, Endeudamiento, Patrimonio)');
         }
     }
 
-    // 3. Experience Match (20 points)
+    // Pillar 3: Experiencia (Contratos Previos) - 40%
     const experienceMatch = await analyzeExperience(process, company, existingContracts);
     if (experienceMatch.hasExperience) {
-        matchScore += 20;
-        reasons.push(`Experiencia previa: ${experienceMatch.contractCount} contratos similares`);
+        matchScore += 40;
+        reasons.push(`Pilar Experiencia: Tienes ${experienceMatch.contractCount} contratos similares en este sector`);
     } else {
-        warnings.push('Sin experiencia previa en este sector');
+        warnings.push('Pilar Experiencia: No se encontraron contratos previos relacionados con los códigos UNSPSC del proceso');
     }
 
-    // 4. Location/Region Match (10 points) - Optional
+    // Dynamic Location Bonus (Extra 5 points cap at 100)
     const locationMatch = analyzeLocation(process, company);
     if (locationMatch.hasMatch) {
-        matchScore += 10;
-        reasons.push(`Ubicación favorable: ${locationMatch.region}`);
+        matchScore += 5;
+        reasons.push(`Ubicación: Proceso en ${locationMatch.region}, una zona favorable`);
     }
 
-    // Consider it a match if score >= 50
-    const isMatch = matchScore >= 50;
+    matchScore = Math.min(100, matchScore);
+    const isMatch = matchScore >= 60; // Increased threshold for "Match"
 
     return {
         isMatch,
@@ -126,6 +127,8 @@ function analyzeFinancialCapacity(process: SecopProcess, company: CompanyData): 
     percentage: number;
     requiredCapacity: string;
     availableCapacity: string;
+    requiredAmount: number;
+    availableAmount: number;
 } {
     const tenderAmount = parseFloat(process.precio_base || '0');
 
@@ -134,7 +137,9 @@ function analyzeFinancialCapacity(process: SecopProcess, company: CompanyData): 
             hasCapacity: false,
             percentage: 0,
             requiredCapacity: formatCurrency(tenderAmount),
-            availableCapacity: '$0'
+            availableCapacity: '$0',
+            requiredAmount: tenderAmount,
+            availableAmount: 0
         };
     }
 
@@ -148,7 +153,9 @@ function analyzeFinancialCapacity(process: SecopProcess, company: CompanyData): 
         hasCapacity,
         percentage,
         requiredCapacity: formatCurrency(tenderAmount),
-        availableCapacity: formatCurrency(capacity)
+        availableCapacity: formatCurrency(capacity),
+        requiredAmount: tenderAmount,
+        availableAmount: capacity
     };
 }
 

@@ -82,11 +82,11 @@ export async function getOpportunities() {
             const score = analysis.matchScore;
 
             if (score >= 90) {
-                reason = "Excelente match financiero y de experiencia";
+                reason = "Excelente cumplimiento de capacidad K y experiencia en sector";
             } else if (score >= 80) {
-                reason = "Muy buen ajuste con tu perfil";
-            } else if (score >= 70) {
-                reason = "Buena oportunidad según tu capacidad";
+                reason = "Fuerte compatibilidad financiera y técnica";
+            } else if (score >= 60) {
+                reason = "Perfil apto según tus indicadores registrados";
             }
 
             return {
@@ -96,7 +96,7 @@ export async function getOpportunities() {
                 amount: parseFloat(proc.precio_base || '0'),
                 closingDate: proc.fecha_de_publicacion_del,
                 matchScore: score,
-                reason: reason || analysis.reasons[0] || "Compatible con tu  perfil",
+                reason: reason || analysis.reasons[0] || analysis.warnings[0] || "Compatible con tu perfil",
                 description: proc.descripci_n_del_procedimiento, // Keep description for AI analysis
                 aiAnalysis: null as TenderAnalysis | null
             };
