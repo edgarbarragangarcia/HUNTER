@@ -474,7 +474,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow">
+                            <div className="p-5 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5">
                                 <div className="flex items-center justify-between mb-6">
                                     <h3 className="text-xl font-semibold text-foreground">Empresas Registradas</h3>
 
@@ -482,7 +482,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
 
                                 {company ? (
                                     <div className="space-y-4">
-                                        <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                                        <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 transition-colors">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
                                                     <Building2 className="w-6 h-6 text-primary" />
@@ -527,8 +527,8 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow">
-                                <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
+                            <div className="p-5 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5">
+                                <div className="border border-white/10 bg-white/5 rounded-xl p-5">
                                     <div className="mb-6">
                                         <h3 className="text-xl font-semibold text-foreground">Información General</h3>
                                         <p className="text-sm text-muted-foreground mt-1">
@@ -560,8 +560,8 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow">
-                                <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
+                            <div className="p-5 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5">
+                                <div className="border border-white/10 bg-white/5 rounded-xl p-5">
                                     <div className="mb-6">
                                         <h3 className="text-xl font-semibold text-foreground">Documentos Legales</h3>
                                         <p className="text-sm text-muted-foreground mt-1">
@@ -656,8 +656,8 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow">
-                                <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
+                            <div className="p-5 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5">
+                                <div className="border border-white/10 bg-white/5 rounded-xl p-5">
                                     <div className="mb-6">
                                         <h3 className="text-xl font-semibold text-foreground">Información Financiera</h3>
                                         <p className="text-sm text-muted-foreground mt-1">
@@ -794,8 +794,8 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow">
-                                <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
+                            <div className="p-5 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5">
+                                <div className="border border-white/10 bg-white/5 rounded-xl p-5">
                                     <div className="mb-6">
                                         <h3 className="text-xl font-semibold text-foreground">Capacidad de Contratación</h3>
                                         <p className="text-sm text-muted-foreground mt-1">
@@ -841,8 +841,8 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-6 rounded-2xl card-gradient card-shimmer shadow-glow">
-                                <div className="border-2 border-dashed border-white/20 rounded-xl p-6">
+                            <div className="p-5 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5">
+                                <div className="border border-white/10 bg-white/5 rounded-xl p-5">
                                     <div className="mb-6">
                                         <h3 className="text-xl font-semibold text-foreground">Experiencia Técnica</h3>
                                         <p className="text-sm text-muted-foreground mt-1">

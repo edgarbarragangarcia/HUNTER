@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getDashboardStats } from "./actions";
-import { TrendingUp, AlertCircle, FileText, Calendar, Target } from "lucide-react";
+import { TrendingUp, AlertCircle, FileText, Calendar, Target, Plus, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -20,149 +20,149 @@ export default async function DashboardPage() {
     };
 
     return (
-        <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold text-foreground mb-2">Panel de Control</h1>
-                <p className="text-zinc-400">Bienvenido de nuevo, {user?.email}</p>
+        <div className="space-y-6 max-h-screen overflow-hidden">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-2xl font-bold text-foreground">Panel de Control</h1>
+                    <p className="text-zinc-400 text-sm">Bienvenido de nuevo, {user?.email}</p>
+                </div>
             </div>
 
             {/* Quick Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Active Missions */}
-                <Link href="/dashboard/missions" className="group">
-                    <div className="p-6 rounded-2xl bg-card border border-border shadow-sm hover:shadow-lg hover:border-primary/50 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                            <Target className="w-24 h-24 text-primary transform rotate-12 translate-x-4 -translate-y-4" />
-                        </div>
-
-                        <div className="flex items-center justify-between mb-4 relative z-10">
-                            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Misiones Activas</h3>
-                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                                <Target className="w-5 h-5 text-primary" />
+                <Link href="/dashboard/missions" className="group block h-full">
+                    <div className="p-4 h-full rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 relative overflow-hidden flex flex-col">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Misiones Activas</h3>
+                            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Target className="w-4 h-4 text-primary" />
                             </div>
                         </div>
 
-                        <div className="relative z-10">
-                            <p className="text-4xl font-bold text-foreground mb-1">{stats.activeMissions}</p>
-                            {stats.upcomingDeadlines > 0 ? (
-                                <p className="text-xs font-medium text-amber-500 flex items-center gap-1.5 bg-amber-500/10 py-1 px-2 rounded-lg w-fit">
-                                    <Calendar className="w-3 h-3" />
-                                    {stats.upcomingDeadlines} cierre{stats.upcomingDeadlines !== 1 ? 's' : ''} próximo{stats.upcomingDeadlines !== 1 ? 's' : ''}
-                                </p>
+                        <div className="flex items-baseline gap-2 mb-2">
+                            <p className="text-3xl font-bold text-foreground">{stats.activeMissions}</p>
+                        </div>
+
+                        {/* Summary Data */}
+                        <div className="mt-auto space-y-1.5 pt-2 border-t border-white/5">
+                            {stats.recentMissions.length > 0 ? (
+                                stats.recentMissions.map((m: any, i: number) => (
+                                    <div key={i} className="flex items-center justify-between text-[10px]">
+                                        <span className="text-zinc-400 truncate max-w-[120px]">{m.name}</span>
+                                        <span className="text-primary font-medium">{new Date(m.deadline).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' })}</span>
+                                    </div>
+                                ))
                             ) : (
-                                <p className="text-sm text-muted-foreground">Sin vencimientos cercanos</p>
+                                <p className="text-[10px] text-zinc-500">Sin misiones activas en este momento</p>
                             )}
                         </div>
                     </div>
                 </Link>
 
                 {/* New Alerts */}
-                <Link href="/dashboard/notifications" className="group">
-                    <div className="p-6 rounded-2xl bg-card border border-border shadow-sm hover:shadow-lg hover:border-orange-500/50 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                            <AlertCircle className="w-24 h-24 text-orange-500 transform rotate-12 translate-x-4 -translate-y-4" />
-                        </div>
-
-                        <div className="flex items-center justify-between mb-4 relative z-10">
-                            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Alertas Nuevas</h3>
-                            <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
-                                <AlertCircle className="w-5 h-5 text-orange-500" />
+                <Link href="/dashboard/notifications" className="group block h-full">
+                    <div className="p-4 h-full rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 relative overflow-hidden flex flex-col">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Alertas</h3>
+                            <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                                <AlertCircle className="w-4 h-4 text-orange-500" />
                             </div>
                         </div>
 
-                        <div className="relative z-10">
-                            <p className="text-4xl font-bold text-foreground mb-1">{stats.newAlerts}</p>
-                            <p className="text-sm text-muted-foreground">
-                                Notificaciones pendientes
-                            </p>
+                        <div className="flex items-baseline gap-2 mb-2">
+                            <p className="text-3xl font-bold text-foreground">{stats.newAlerts}</p>
+                        </div>
+
+                        {/* Summary Data */}
+                        <div className="mt-auto grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
+                            <div className="text-[10px] flex items-center gap-1">
+                                <span className="w-1 h-1 rounded-full bg-orange-500"></span>
+                                <span className="text-zinc-400">{stats.notifSummary.alert} Alertas</span>
+                            </div>
+                            <div className="text-[10px] flex items-center gap-1">
+                                <span className="w-1 h-1 rounded-full bg-blue-500"></span>
+                                <span className="text-zinc-400">{stats.notifSummary.mission} Misiones</span>
+                            </div>
                         </div>
                     </div>
                 </Link>
 
                 {/* Documents */}
-                <Link href="/dashboard/company" className="group">
-                    <div className="p-6 rounded-2xl bg-card border border-border shadow-sm hover:shadow-lg hover:border-blue-500/50 transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                            <FileText className="w-24 h-24 text-blue-500 transform rotate-12 translate-x-4 -translate-y-4" />
-                        </div>
-
-                        <div className="flex items-center justify-between mb-4 relative z-10">
-                            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Documentos</h3>
-                            <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center group-hover:bg-blue-500/20 transition-colors">
-                                <FileText className="w-5 h-5 text-blue-500" />
+                <Link href="/dashboard/company" className="group block h-full">
+                    <div className="p-4 h-full rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 relative overflow-hidden flex flex-col">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Documentos</h3>
+                            <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                                <FileText className="w-4 h-4 text-blue-500" />
                             </div>
                         </div>
 
-                        <div className="relative z-10">
-                            <p className="text-4xl font-bold text-foreground mb-1">{stats.documents}</p>
-                            <p className="text-sm text-muted-foreground">
-                                Documentos subidos
-                            </p>
+                        <div className="flex items-baseline gap-2 mb-2">
+                            <p className="text-3xl font-bold text-foreground">{stats.documents}</p>
+                        </div>
+
+                        {/* Summary Data */}
+                        <div className="mt-auto space-y-1 pt-2 border-t border-white/5">
+                            <p className="text-[10px] text-zinc-400">RUP, Financieros y Técnicos.</p>
+                            <div className="flex items-center text-[10px] text-primary">
+                                Gestionar perfil <ArrowRight className="w-2.5 h-2.5 ml-1" />
+                            </div>
                         </div>
                     </div>
                 </Link>
             </div>
 
             {/* Secondary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Success Rate */}
-                <div className="p-6 rounded-2xl bg-card border border-border shadow-sm relative overflow-hidden group hover:border-green-500/50 transition-colors duration-300">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                        <TrendingUp className="w-32 h-32 text-green-500 transform rotate-12 translate-x-8 -translate-y-8" />
+                <div className="p-4 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 relative overflow-hidden">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                            <TrendingUp className="w-5 h-5 text-green-500" />
+                        </div>
+                        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Tasa de Éxito</h3>
                     </div>
 
-                    <div className="flex items-center gap-4 mb-4 relative z-10">
-                        <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center">
-                            <TrendingUp className="w-6 h-6 text-green-500" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-foreground">Tasa de Éxito</h3>
+                    <div className="flex items-baseline gap-3">
+                        <p className="text-4xl font-bold text-foreground">{stats.successRate}%</p>
+                        <span className="text-[10px] font-medium text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full">+2.5% vs mes ant.</span>
                     </div>
-
-                    <div className="relative z-10 pl-1">
-                        <div className="flex items-baseline gap-2">
-                            <p className="text-5xl font-bold text-foreground tracking-tight">{stats.successRate}%</p>
-                            <span className="text-sm font-medium text-green-600 bg-green-500/10 px-2 py-0.5 rounded-full">+2.5% vs mes anterior</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-2">de licitaciones ganadas</p>
-                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">de licitaciones adjudicadas globalmente</p>
                 </div>
 
                 {/* Total in Process */}
-                <div className="p-6 rounded-2xl bg-card border border-border shadow-sm relative overflow-hidden group hover:border-indigo-500/50 transition-colors duration-300">
-                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                        <Target className="w-32 h-32 text-indigo-500 transform rotate-12 translate-x-8 -translate-y-8" />
+                <div className="p-4 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 relative overflow-hidden">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center">
+                            <Calendar className="w-5 h-5 text-indigo-500" />
+                        </div>
+                        <h3 className="text-sm font-semibold text-foreground uppercase tracking-wider">Valor en Proceso</h3>
                     </div>
 
-                    <div className="flex items-center gap-4 mb-4 relative z-10">
-                        <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center">
-                            <Target className="w-6 h-6 text-indigo-500" />
+                    <div className="flex flex-col">
+                        <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.totalInProcess)}</p>
+                        <div className="mt-2 flex items-center gap-2">
+                            <span className="bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-full font-medium text-[10px]">TOTAL ACTIVO</span>
+                            <p className="text-[10px] text-muted-foreground">En {stats.activeMissions} misiones</p>
                         </div>
-                        <h3 className="text-lg font-semibold text-foreground">Valor en Proceso</h3>
-                    </div>
-
-                    <div className="relative z-10 pl-1">
-                        <div className="flex items-baseline gap-2">
-                            <p className="text-3xl font-bold text-foreground tracking-tight">{formatCurrency(stats.totalInProcess)}</p>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-2 flex items-center gap-2">
-                            <span className="bg-indigo-500/10 text-indigo-600 px-2 py-0.5 rounded-full font-medium text-xs">ACTIVO</span>
-                            En {stats.activeMissions} misión{stats.activeMissions !== 1 ? 'es' : ''} activa{stats.activeMissions !== 1 ? 's' : ''}
-                        </p>
                     </div>
                 </div>
             </div>
 
-            {/* Onboarding Card */}
-            <div className="p-8 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/20">
-                <h2 className="text-xl font-bold text-foreground mb-4">Completa tu Perfil de Empresa</h2>
-                <p className="text-zinc-400 mb-6 max-w-2xl">
-                    Para que HUNTER pueda encontrar las mejores licitaciones para ti, necesitamos conocer más sobre tu empresa. Sube tus documentos legales y financieros.
-                </p>
+            {/* Compact Onboarding */}
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent border border-primary/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="max-w-xl">
+                    <h2 className="text-lg font-bold text-foreground">Completa tu Perfil de Empresa</h2>
+                    <p className="text-zinc-400 text-xs mt-1">
+                        Sube tus documentos legales y financieros para que HUNTER pueda encontrarte las mejores oportunidades.
+                    </p>
+                </div>
                 <Link
                     href="/dashboard/company"
-                    className="inline-flex items-center justify-center h-10 px-6 rounded-lg bg-primary text-black font-semibold hover:bg-primary/90 transition-colors"
+                    className="inline-flex items-center justify-center h-9 px-5 rounded-lg bg-primary text-black text-xs font-bold hover:bg-primary/90 transition-colors shrink-0"
                 >
-                    Ir al Perfil de Empresa
+                    Ir al Perfil
                 </Link>
             </div>
         </div>

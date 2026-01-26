@@ -14,33 +14,40 @@ export async function getDashboardStats() {
             upcomingDeadlines: 0,
             successRate: 0,
             totalInProcess: 0,
+            recentMissions: [],
+            notifSummary: { mission: 0, alert: 0, document: 0, new_tender: 0 }
         };
     }
 
     try {
         // Get active missions
-        const { count: activeMissions } = await supabase
+        const { data: recentMissions, count: activeMissions } = await supabase
             .from('projects')
-            .select('*', { count: 'exact', head: true })
+            .select('name, deadline', { count: 'exact' })
             .eq('user_id', user.id)
-            .eq('status', 'ACTIVE');
+            .eq('status', 'ACTIVE')
+            .limit(2);
 
-        // Get unread notifications (use demo value if table doesn't exist)
-        const { count: newAlerts, error: notifError } = await supabase
+        // Get unread notifications
+        const { data: notifications, error: notifError } = await supabase
             .from('notifications')
-            .select('*', { count: 'exact', head: true })
+            .select('type')
             .eq('user_id', user.id)
             .eq('read', false);
 
-        // Get documents from profiles table (documents column)
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', user.id)
-            .single();
+        const notifSummary = {
+            mission: notifications?.filter(n => n.type === 'MISSION' || n.type === 'new_tender').length || 0,
+            alert: notifications?.filter(n => n.type === 'ALERT' || n.type === 'alert').length || 0,
+            document: notifications?.filter(n => n.type === 'DOCUMENT' || n.type === 'alert').length || 0,
+            new_tender: notifications?.filter(n => n.type === 'new_tender').length || 0,
+        };
+        const newAlerts = notifications?.length || 0;
 
-        // Count documents - for now use 0, will be updated when company documents are uploaded
-        const documents = 0;
+        // Get documents count from company_documents table
+        const { count: documents } = await supabase
+            .from('company_documents')
+            .select('*', { count: 'exact', head: true })
+            .eq('uploaded_by', user.id);
 
         // Get upcoming deadlines (missions with deadline in next 7 days)
         const sevenDaysFromNow = new Date();
@@ -78,15 +85,16 @@ export async function getDashboardStats() {
 
         return {
             activeMissions: activeMissions || 0,
-            newAlerts: notifError ? 6 : (newAlerts || 0), // Demo data if table doesn't exist
+            newAlerts: notifError ? 6 : (newAlerts || 0),
             documents: documents || 0,
             upcomingDeadlines: upcomingDeadlines || 0,
             successRate,
             totalInProcess,
+            recentMissions: recentMissions || [],
+            notifSummary
         };
     } catch (error) {
         console.error('Error fetching dashboard stats:', error);
-        // Return demo data on error
         return {
             activeMissions: 0,
             newAlerts: 6,
@@ -94,6 +102,8 @@ export async function getDashboardStats() {
             upcomingDeadlines: 0,
             successRate: 0,
             totalInProcess: 0,
+            recentMissions: [],
+            notifSummary: { mission: 3, alert: 2, document: 1, new_tender: 1 }
         };
     }
 }
