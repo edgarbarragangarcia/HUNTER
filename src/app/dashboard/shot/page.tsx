@@ -25,15 +25,7 @@ export default function ShotPage() {
             bg: "bg-purple-500/10",
             hoverBg: "group-hover:bg-purple-500/20"
         },
-        {
-            title: "Monitor de Mercado",
-            description: "Seguimiento de entidades y análisis de competidores.",
-            icon: Eye,
-            href: "/dashboard/shot/monitor",
-            color: "text-blue-400",
-            bg: "bg-blue-500/10",
-            hoverBg: "group-hover:bg-blue-500/20"
-        },
+
         {
             title: "Ranking",
             description: "Tu posición en el mercado frente a la competencia.",
