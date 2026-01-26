@@ -474,7 +474,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-5 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 h-[400px] flex flex-col">
+                            <div className="p-4 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 h-[200px] flex flex-col overflow-hidden">
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="text-xl font-semibold text-foreground">Empresas Registradas</h3>
                                     <div className="flex gap-2">
@@ -487,42 +487,35 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                     </div>
                                 </div>
 
-                                <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin">
+                                <div className="flex-1 overflow-hidden">
                                     {company ? (
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/10 transition-colors">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
-                                                        <Building2 className="w-6 h-6 text-primary" />
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="font-semibold text-foreground text-lg">{company.company_name}</h4>
-                                                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                                            <span>NIT: {company.nit || 'No registrado'}</span>
-                                                            <span className="w-1 h-1 rounded-full bg-white/20"></span>
-                                                            <span>{company.city || 'Ciudad no registrada'}</span>
-                                                        </div>
+                                        <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 transition-colors h-full">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center">
+                                                    <Building2 className="w-5 h-5 text-primary" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-semibold text-foreground text-sm truncate max-w-[200px]">{company.company_name}</h4>
+                                                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                                                        <span>NIT: {company.nit || 'Sin registro'}</span>
+                                                        <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                                                        <span>{company.city || 'S/C'}</span>
                                                     </div>
                                                 </div>
-
-                                                <button
-                                                    onClick={() => setIsViewingFullDetails(true)}
-                                                    className="w-10 h-10 rounded-full bg-primary hover:bg-primary/90 text-white flex items-center justify-center transition-colors shadow-lg hover:shadow-xl"
-                                                    title="Ver Detalles Completos"
-                                                >
-                                                    <FileText className="w-5 h-5" />
-                                                </button>
                                             </div>
+
+                                            <button
+                                                onClick={() => setIsViewingFullDetails(true)}
+                                                className="w-8 h-8 rounded-full bg-primary hover:bg-primary/90 text-white flex items-center justify-center transition-colors shadow-lg"
+                                                title="Ver Detalles"
+                                            >
+                                                <FileText className="w-4 h-4" />
+                                            </button>
                                         </div>
                                     ) : (
-                                        <div className="text-center py-6 border border-white/10 bg-white/5 rounded-xl">
-                                            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
-                                                <Building2 className="w-8 h-8 text-muted-foreground" />
-                                            </div>
-                                            <h4 className="text-lg font-medium text-foreground mb-2">No hay empresas registradas</h4>
-                                            <p className="text-muted-foreground max-w-md mx-auto">
-                                                Registra tu empresa para comenzar a gestionar tus documentos y analizar licitaciones.
-                                            </p>
+                                        <div className="h-full flex flex-col items-center justify-center border border-white/10 bg-white/5 rounded-xl px-4 text-center">
+                                            <Building2 className="w-6 h-6 text-muted-foreground mb-2" />
+                                            <p className="text-xs text-foreground font-medium">No hay empresas</p>
                                         </div>
                                     )}
                                 </div>
@@ -536,28 +529,28 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-5 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 h-[400px] flex flex-col">
+                            <div className="p-4 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 h-[200px] flex flex-col overflow-hidden">
                                 <div className="flex items-center justify-between mb-4 flex-shrink-0">
                                     <h3 className="text-xl font-semibold text-foreground">Información General</h3>
                                     <div className="px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-[9px] text-primary font-bold">PERFIL</div>
                                 </div>
 
-                                <div className="flex-1 space-y-3 mb-4 overflow-y-auto pr-2 scrollbar-thin">
-                                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
-                                        <span className="text-xs text-muted-foreground">Empresa / NIT</span>
-                                        <span className="text-sm font-medium">{company?.company_name || 'No disp.'} - {company?.nit || 'Sin NIT'}</span>
+                                <div className="flex-1 grid grid-cols-2 gap-2 mb-2 overflow-hidden">
+                                    <div className="flex flex-col p-2 rounded-lg bg-white/5 border border-white/10">
+                                        <span className="text-[9px] text-muted-foreground">NIT</span>
+                                        <span className="text-xs font-medium truncate">{company?.nit || 'N/A'}</span>
                                     </div>
-                                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
-                                        <span className="text-xs text-muted-foreground">Representante</span>
-                                        <span className="text-sm font-medium">{company?.legal_representative || 'No registrado'}</span>
+                                    <div className="flex flex-col p-2 rounded-lg bg-white/5 border border-white/10">
+                                        <span className="text-[9px] text-muted-foreground">Representante</span>
+                                        <span className="text-xs font-medium truncate">{company?.legal_representative || 'S/R'}</span>
                                     </div>
-                                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
-                                        <span className="text-xs text-muted-foreground">Sector Económico</span>
-                                        <span className="text-sm font-medium">{company?.economic_sector || 'No registrado'}</span>
+                                    <div className="flex flex-col p-2 rounded-lg bg-white/5 border border-white/10 text-xs">
+                                        <span className="text-[9px] text-muted-foreground">Sector</span>
+                                        <span className="text-xs font-medium truncate">{company?.economic_sector || 'S/S'}</span>
                                     </div>
-                                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
-                                        <span className="text-xs text-muted-foreground">Ciudad</span>
-                                        <span className="text-sm font-medium">{company?.city || 'No registrada'}</span>
+                                    <div className="flex flex-col p-2 rounded-lg bg-white/5 border border-white/10">
+                                        <span className="text-[9px] text-muted-foreground">Ciudad</span>
+                                        <span className="text-xs font-medium truncate">{company?.city || 'S/C'}</span>
                                     </div>
                                 </div>
 
@@ -581,41 +574,26 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-5 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 h-[400px] flex flex-col">
+                            <div className="p-4 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 h-[200px] flex flex-col overflow-hidden">
                                 <div className="flex items-center justify-between mb-4 flex-shrink-0">
                                     <h3 className="text-xl font-semibold text-foreground">Documentos Legales</h3>
                                     <p className="text-xs text-zinc-500">{documentsByCategory.legal.length} documentos</p>
                                 </div>
 
-                                <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin mb-4">
-                                    <div className="grid grid-cols-1 gap-2">
-                                        {documentsByCategory.legal.length > 0 ? (
-                                            documentsByCategory.legal.map(doc => (
-                                                <div key={doc.id} className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10 group transition-colors hover:bg-white/10">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                                            <FileText className="w-4 h-4 text-primary" />
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs font-medium text-foreground truncate max-w-[200px]">{doc.name}</p>
-                                                            <p className="text-[10px] text-zinc-500">{(doc.size / 1024).toFixed(0)} KB</p>
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => setSelectedDocument(doc)}
-                                                        className="p-1.5 hover:bg-white/10 rounded-md transition-colors"
-                                                    >
-                                                        <ArrowRight className="w-3 h-3 text-zinc-400" />
-                                                    </button>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="text-center py-12 opacity-50">
-                                                <ShieldCheck className="w-12 h-12 text-zinc-600 mx-auto mb-2" />
-                                                <p className="text-xs">No hay documentos legales</p>
+                                <div className="flex-1 overflow-hidden grid grid-cols-2 gap-2 mb-2">
+                                    {documentsByCategory.legal.length > 0 ? (
+                                        documentsByCategory.legal.slice(0, 4).map(doc => (
+                                            <div key={doc.id} className="flex items-center gap-2 p-1.5 rounded-lg bg-white/5 border border-white/10 group truncate">
+                                                <FileText className="w-3 h-3 text-primary flex-shrink-0" />
+                                                <p className="text-[9px] font-medium truncate">{doc.name}</p>
                                             </div>
-                                        )}
-                                    </div>
+                                        ))
+                                    ) : (
+                                        <div className="col-span-2 flex flex-col items-center justify-center opacity-30 h-full">
+                                            <ShieldCheck className="w-6 h-6 mb-1" />
+                                            <p className="text-[9px]">Sin documentos</p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="mt-auto pt-4 border-t border-white/5 flex justify-end gap-2 flex-shrink-0">
@@ -646,7 +624,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-5 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 h-[400px] flex flex-col">
+                            <div className="p-4 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 h-[200px] flex flex-col overflow-hidden">
                                 <div className="flex items-center justify-between mb-4 flex-shrink-0">
                                     <h3 className="text-xl font-semibold text-foreground">Información Financiera</h3>
                                     <p className="text-xs text-zinc-500">{documentsByCategory.financial.length} documentos</p>
@@ -654,36 +632,29 @@ export default function CompanyForm({ company }: CompanyFormProps) {
 
                                 {/* Financial Indicators Grid */}
                                 {company?.financial_indicators ? (
-                                    <div className="grid grid-cols-2 gap-2 mb-4 flex-shrink-0">
-                                        <div className="p-2 rounded-lg bg-white/5 border border-white/10">
-                                            <p className="text-[10px] text-zinc-500">Liquidez</p>
-                                            <p className="text-sm font-bold text-primary">{company.financial_indicators.liquidity_index?.toFixed(2) || '0.00'}</p>
+                                    <div className="grid grid-cols-2 gap-2 mb-2 flex-shrink-0">
+                                        <div className="p-1.5 rounded-lg bg-white/5 border border-white/10">
+                                            <p className="text-[8px] text-zinc-500">Liquidez</p>
+                                            <p className="text-xs font-bold text-primary">{company.financial_indicators.liquidity_index?.toFixed(2) || '0.00'}</p>
                                         </div>
-                                        <div className="p-2 rounded-lg bg-white/5 border border-white/10">
-                                            <p className="text-[10px] text-zinc-500">Endeudamiento</p>
-                                            <p className="text-sm font-bold text-primary">{((company.financial_indicators.indebtedness_index || 0) * 100).toFixed(1)}%</p>
+                                        <div className="p-1.5 rounded-lg bg-white/5 border border-white/10">
+                                            <p className="text-[8px] text-zinc-500">Endeudamiento</p>
+                                            <p className="text-xs font-bold text-primary">{((company.financial_indicators.indebtedness_index || 0) * 100).toFixed(1)}%</p>
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="flex-1 flex items-center justify-center border border-dashed border-white/10 rounded-xl mb-4 opacity-50">
-                                        <p className="text-[10px]">Sin indicadores financieros</p>
+                                    <div className="h-10 flex items-center justify-center border border-dashed border-white/10 rounded-lg mb-2 opacity-50">
+                                        <p className="text-[8px]">Sin datos</p>
                                     </div>
                                 )}
 
-                                <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin mb-4">
-                                    <div className="space-y-2">
-                                        {documentsByCategory.financial.slice(0, 3).map(doc => (
-                                            <div key={doc.id} className="flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10 text-[10px]">
-                                                <div className="flex items-center gap-2">
-                                                    <FileText className="w-3 h-3 text-primary" />
-                                                    <span className="truncate max-w-[150px]">{doc.name}</span>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        {documentsByCategory.financial.length > 3 && (
-                                            <p className="text-[9px] text-center text-zinc-500">+{documentsByCategory.financial.length - 3} documentos más</p>
-                                        )}
-                                    </div>
+                                <div className="flex-1 grid grid-cols-2 gap-2 mb-2 overflow-hidden">
+                                    {documentsByCategory.financial.slice(0, 4).map(doc => (
+                                        <div key={doc.id} className="flex items-center gap-2 p-1.5 rounded-lg bg-white/5 border border-white/10 truncate">
+                                            <FileText className="w-3 h-3 text-primary flex-shrink-0" />
+                                            <span className="text-[9px] truncate">{doc.name}</span>
+                                        </div>
+                                    ))}
                                 </div>
 
                                 <div className="mt-auto pt-4 border-t border-white/5 flex justify-end gap-2 flex-shrink-0">
@@ -700,55 +671,6 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                         Documentos
                                     </button>
                                 </div>
-
-                                {/* Uploaded Documents */}
-                                {documentsByCategory.financial.length > 0 ? (
-                                    <div className="hidden">
-                                        {documentsByCategory.financial.map((file) => (
-                                            <motion.div
-                                                key={file.id}
-                                                initial={{ opacity: 0, scale: 0.95 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                exit={{ opacity: 0, scale: 0.95 }}
-                                                className="p-4 rounded-lg bg-sky-50 dark:bg-slate-700/80 border border-sky-200 dark:border-slate-600 hover:border-primary/50 transition-colors"
-                                            >
-                                                <div className="flex items-start justify-between gap-3">
-                                                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                                                        <button
-                                                            onClick={() => setSelectedDocument(file)}
-                                                            className="hover:bg-primary/10 p-1 rounded-lg transition-colors"
-                                                        >
-                                                            <DollarSign className="w-8 h-8 text-primary flex-shrink-0 cursor-pointer" />
-                                                        </button>
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-medium text-foreground truncate">{file.name}</p>
-                                                            <p className="text-xs text-muted-foreground mt-1">
-                                                                {(file.size / 1024).toFixed(2)} KB
-                                                            </p>
-                                                            {file.summary && (
-                                                                <div className="mt-2 p-3 bg-primary/5 rounded-lg border border-primary/10">
-                                                                    <div className="flex items-center gap-2 mb-1">
-                                                                        <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                                                                        <span className="text-xs font-medium text-primary">Análisis IA</span>
-                                                                    </div>
-                                                                    <p className="text-xs text-slate-600 dark:text-zinc-300 leading-relaxed">
-                                                                        {file.summary}
-                                                                    </p>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                    <button
-                                                        onClick={() => handleRemoveFile('financial', file.id)}
-                                                        className="p-2 hover:bg-red-500/10 rounded-lg transition-colors group"
-                                                    >
-                                                        <Trash2 className="w-4 h-4 text-muted-foreground group-hover:text-red-500" />
-                                                    </button>
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </div>
-                                ) : null}
                             </div>
                         </motion.div>
                     )}
@@ -760,26 +682,24 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-5 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 h-[400px] flex flex-col">
+                            <div className="p-4 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 h-[200px] flex flex-col overflow-hidden">
                                 <div className="flex items-center justify-between mb-4 flex-shrink-0">
                                     <h3 className="text-xl font-semibold text-foreground">Capacidad</h3>
                                     <div className="px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-[9px] text-primary font-bold">SMMLV</div>
                                 </div>
 
-                                <div className="flex-1 space-y-3 mb-4 overflow-y-auto pr-2 scrollbar-thin">
-                                    <div className="p-3 rounded-xl bg-white/5 border border-white/10">
-                                        <p className="text-[10px] text-zinc-500 mb-1">Capacidad de Contratación (K)</p>
-                                        <p className="text-2xl font-bold text-foreground">{company?.financial_indicators?.k_contratacion || '0.00'}</p>
+                                <div className="flex-1 grid grid-cols-2 gap-2 mb-2 overflow-hidden">
+                                    <div className="p-2 rounded-lg bg-white/5 border border-white/10 flex flex-col justify-center col-span-2">
+                                        <p className="text-[8px] text-zinc-500">Capacidad (K)</p>
+                                        <p className="text-sm font-bold text-foreground">{company?.financial_indicators?.k_contratacion || '0.00'}</p>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div className="p-2 rounded-lg bg-white/5 border border-white/10">
-                                            <p className="text-[10px] text-zinc-500">Capital Trabajo</p>
-                                            <p className="text-xs font-semibold">${((company?.financial_indicators?.working_capital || 0) / 1000000).toFixed(0)}M</p>
-                                        </div>
-                                        <div className="p-2 rounded-lg bg-white/5 border border-white/10">
-                                            <p className="text-[10px] text-zinc-500">Patrimonio</p>
-                                            <p className="text-xs font-semibold">${((company?.financial_indicators?.total_equity || 0) / 1000000).toFixed(0)}M</p>
-                                        </div>
+                                    <div className="p-2 rounded-lg bg-white/5 border border-white/10 overflow-hidden">
+                                        <p className="text-[8px] text-zinc-500">Capital Trabajo</p>
+                                        <p className="text-[10px] font-semibold">${((company?.financial_indicators?.working_capital || 0) / 1000000).toFixed(0)}M</p>
+                                    </div>
+                                    <div className="p-2 rounded-lg bg-white/5 border border-white/10 overflow-hidden">
+                                        <p className="text-[8px] text-zinc-500">Patrimonio</p>
+                                        <p className="text-[10px] font-semibold">${((company?.financial_indicators?.total_equity || 0) / 1000000).toFixed(0)}M</p>
                                     </div>
                                 </div>
 
@@ -802,33 +722,28 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-4"
                         >
-                            <div className="p-5 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 h-[400px] flex flex-col">
+                            <div className="p-4 rounded-2xl card-gradient card-shimmer shadow-glow border border-white/5 h-[200px] flex flex-col overflow-hidden">
                                 <div className="flex items-center justify-between mb-4 flex-shrink-0">
                                     <h3 className="text-xl font-semibold text-foreground">Experiencia</h3>
                                     <p className="text-xs text-zinc-500">{contracts.length} contratos registrados</p>
                                 </div>
 
-                                <div className="flex-1 space-y-2 mb-4 overflow-y-auto pr-2 scrollbar-thin">
+                                <div className="flex-1 grid grid-cols-2 gap-2 mb-2 overflow-hidden">
                                     {contracts.length > 0 ? (
-                                        contracts.slice(0, 3).map(contract => (
-                                            <div key={contract.id} className="p-2 rounded-lg bg-white/5 border border-white/10 flex items-center justify-between group hover:bg-white/10 transition-colors">
-                                                <div className="flex items-center gap-2 overflow-hidden">
-                                                    <div className="w-6 h-6 rounded bg-blue-500/10 flex items-center justify-center flex-shrink-0">
-                                                        <Briefcase className="w-3 h-3 text-blue-400" />
-                                                    </div>
-                                                    <span className="text-[10px] font-medium truncate">{contract.client_name}</span>
+                                        contracts.slice(0, 2).map(contract => (
+                                            <div key={contract.id} className="p-2 rounded-lg bg-white/5 border border-white/10 flex flex-col justify-between group hover:bg-white/10 transition-colors h-[50px]">
+                                                <div className="flex items-center gap-1 overflow-hidden">
+                                                    <Briefcase className="w-2.5 h-2.5 text-blue-400 flex-shrink-0" />
+                                                    <span className="text-[9px] font-medium truncate">{contract.client_name}</span>
                                                 </div>
-                                                <span className="text-[9px] text-zinc-500 flex-shrink-0 ml-2">${(contract.contract_value_smmlv || 0).toFixed(0)} SMMLV</span>
+                                                <span className="text-[8px] text-primary font-bold self-end">${(contract.contract_value_smmlv || 0).toFixed(0)} SMMLV</span>
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="h-full flex flex-col items-center justify-center opacity-30 text-center py-4">
-                                            <Target className="w-10 h-10 mb-2" />
-                                            <p className="text-[10px]">No hay experiencia registrada</p>
+                                        <div className="col-span-2 flex flex-col items-center justify-center opacity-30 py-4 h-full">
+                                            <Target className="w-6 h-6 mb-1" />
+                                            <p className="text-[9px]">Sin experiencia</p>
                                         </div>
-                                    )}
-                                    {contracts.length > 3 && (
-                                        <p className="text-[9px] text-center text-zinc-500">+{contracts.length - 3} más</p>
                                     )}
                                 </div>
 
