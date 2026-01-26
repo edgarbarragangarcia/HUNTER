@@ -1404,109 +1404,112 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                         await saveCompanyInfo(formData);
                                         setIsEditingInfo(false);
                                     }} className="space-y-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium text-zinc-400">Nombre de la Empresa *</label>
-                                                <input
-                                                    type="text"
-                                                    name="company_name"
-                                                    defaultValue={company?.company_name}
-                                                    placeholder="Ej. Tech Solutions SAS"
-                                                    required
-                                                    className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                                />
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-primary mb-4">Datos Básicos de la Empresa</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium text-zinc-400">Nombre de la Empresa *</label>
+                                                    <input
+                                                        type="text"
+                                                        name="company_name"
+                                                        defaultValue={company?.company_name}
+                                                        placeholder="Ej. Tech Solutions SAS"
+                                                        required
+                                                        className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium text-zinc-400">NIT *</label>
+                                                    <input
+                                                        type="text"
+                                                        name="nit"
+                                                        defaultValue={company?.nit}
+                                                        placeholder="900.123.456-7"
+                                                        required
+                                                        className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                    />
+                                                </div>
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium text-zinc-400">NIT *</label>
-                                                <input
-                                                    type="text"
-                                                    name="nit"
-                                                    defaultValue={company?.nit}
-                                                    placeholder="900.123.456-7"
-                                                    required
-                                                    className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                                />
-                                            </div>
-                                        </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium text-zinc-400">Representante Legal *</label>
-                                                <input
-                                                    type="text"
-                                                    name="legal_representative"
-                                                    defaultValue={company?.legal_representative}
-                                                    placeholder="Juan Pérez"
-                                                    required
-                                                    className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                                />
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium text-zinc-400">Representante Legal *</label>
+                                                    <input
+                                                        type="text"
+                                                        name="legal_representative"
+                                                        defaultValue={company?.legal_representative}
+                                                        placeholder="Juan Pérez"
+                                                        required
+                                                        className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium text-zinc-400">Sector / Actividad Económica *</label>
+                                                    <input
+                                                        type="text"
+                                                        name="economic_sector"
+                                                        defaultValue={company?.economic_sector}
+                                                        placeholder="Tecnología, Construcción, etc."
+                                                        required
+                                                        className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                    />
+                                                </div>
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium text-zinc-400">Sector / Actividad Económica *</label>
-                                                <input
-                                                    type="text"
-                                                    name="economic_sector"
-                                                    defaultValue={company?.economic_sector}
-                                                    placeholder="Tecnología, Construcción, etc."
-                                                    required
-                                                    className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                                />
-                                            </div>
-                                        </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium text-zinc-400">Teléfono</label>
-                                                <input
-                                                    type="tel"
-                                                    name="phone"
-                                                    defaultValue={company?.phone}
-                                                    placeholder="+57 300 123 4567"
-                                                    className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                                />
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium text-zinc-400">Teléfono</label>
+                                                    <input
+                                                        type="tel"
+                                                        name="phone"
+                                                        defaultValue={company?.phone}
+                                                        placeholder="+57 300 123 4567"
+                                                        className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium text-zinc-400">País</label>
+                                                    <input
+                                                        type="text"
+                                                        name="country"
+                                                        defaultValue={company?.country || "Colombia"}
+                                                        className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                    />
+                                                </div>
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium text-zinc-400">País</label>
-                                                <input
-                                                    type="text"
-                                                    name="country"
-                                                    defaultValue={company?.country || "Colombia"}
-                                                    className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                                />
-                                            </div>
-                                        </div>
 
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-zinc-400">Dirección</label>
-                                            <input
-                                                type="text"
-                                                name="address"
-                                                defaultValue={company?.address}
-                                                placeholder="Calle 123 #45-67"
-                                                className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                            />
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="space-y-2">
-                                                <label className="text-sm font-medium text-zinc-400">Ciudad</label>
+                                                <label className="text-sm font-medium text-zinc-400">Dirección</label>
                                                 <input
                                                     type="text"
-                                                    name="city"
-                                                    defaultValue={company?.city}
-                                                    placeholder="Bogotá"
+                                                    name="address"
+                                                    defaultValue={company?.address}
+                                                    placeholder="Calle 123 #45-67"
                                                     className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                                                 />
                                             </div>
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium text-zinc-400">Departamento</label>
-                                                <input
-                                                    type="text"
-                                                    name="department"
-                                                    defaultValue={company?.department}
-                                                    placeholder="Cundinamarca"
-                                                    className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
-                                                />
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium text-zinc-400">Ciudad</label>
+                                                    <input
+                                                        type="text"
+                                                        name="city"
+                                                        defaultValue={company?.city}
+                                                        placeholder="Bogotá"
+                                                        className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-sm font-medium text-zinc-400">Departamento</label>
+                                                    <input
+                                                        type="text"
+                                                        name="department"
+                                                        defaultValue={company?.department}
+                                                        placeholder="Cundinamarca"
+                                                        className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
 
@@ -1849,7 +1852,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                     {/* Add New Contract Section */}
                                     <div className="mb-8">
                                         <div className="flex items-center justify-between mb-4">
-                                            <h4 className="text-lg font-semibold text-foreground">Agregar Nuevo Contrato</h4>
+                                            <h4 className="text-sm font-semibold text-primary">Agregar Nuevo Contrato</h4>
                                             <button
                                                 onClick={() => setIsAddingContract(!isAddingContract)}
                                                 className="flex items-center gap-2 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors text-sm font-medium"
@@ -1885,7 +1888,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                                                         name="contract_number"
                                                                         type="text"
                                                                         required
-                                                                        className="w-full p-2.5 rounded-lg bg-black/20 border border-white/10 text-foreground focus:border-primary/50 focus:outline-none"
+                                                                        className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                                                                         placeholder="Ej: CTR-2024-001"
                                                                     />
                                                                 </div>
@@ -1895,19 +1898,19 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                                                         name="client_name"
                                                                         type="text"
                                                                         required
-                                                                        className="w-full p-2.5 rounded-lg bg-black/20 border border-white/10 text-foreground focus:border-primary/50 focus:outline-none"
+                                                                        className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                                                                         placeholder="Ej: Gobernación de Antioquia"
                                                                     />
                                                                 </div>
                                                                 <div className="space-y-2">
                                                                     <label className="text-sm font-medium text-zinc-400">Valor del Contrato (COP) *</label>
                                                                     <div className="relative">
-                                                                        <span className="absolute left-3 top-2.5 text-zinc-500">$</span>
+                                                                        <span className="absolute left-3 top-3 text-zinc-500">$</span>
                                                                         <input
                                                                             name="contract_value"
                                                                             type="number"
                                                                             required
-                                                                            className="w-full pl-7 p-2.5 rounded-lg bg-black/20 border border-white/10 text-foreground focus:border-primary/50 focus:outline-none"
+                                                                            className="w-full pl-7 p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                                                                             placeholder="0"
                                                                         />
                                                                     </div>
@@ -1918,7 +1921,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                                                         name="contract_value_smmlv"
                                                                         type="number"
                                                                         step="0.01"
-                                                                        className="w-full p-2.5 rounded-lg bg-black/20 border border-white/10 text-foreground focus:border-primary/50 focus:outline-none"
+                                                                        className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                                                                         placeholder="0.00"
                                                                     />
                                                                 </div>
@@ -1927,7 +1930,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                                                     <input
                                                                         name="execution_date"
                                                                         type="date"
-                                                                        className="w-full p-2.5 rounded-lg bg-black/20 border border-white/10 text-foreground focus:border-primary/50 focus:outline-none"
+                                                                        className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground focus:outline-none focus:border-primary/50"
                                                                     />
                                                                 </div>
                                                                 <div className="space-y-2">
@@ -1935,7 +1938,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                                                     <input
                                                                         name="unspsc_codes"
                                                                         type="text"
-                                                                        className="w-full p-2.5 rounded-lg bg-black/20 border border-white/10 text-foreground focus:border-primary/50 focus:outline-none"
+                                                                        className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
                                                                         placeholder="Ej: 72101500, 81111500"
                                                                     />
                                                                 </div>
@@ -1945,7 +1948,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
                                                                 <textarea
                                                                     name="description"
                                                                     rows={3}
-                                                                    className="w-full p-2.5 rounded-lg bg-black/20 border border-white/10 text-foreground focus:border-primary/50 focus:outline-none resize-none"
+                                                                    className="w-full p-3 rounded-lg bg-sky-100 dark:bg-slate-800/50 border border-sky-300 dark:border-slate-700 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 resize-none"
                                                                     placeholder="Descripción del objeto del contrato..."
                                                                 />
                                                             </div>
@@ -1966,7 +1969,7 @@ export default function CompanyForm({ company }: CompanyFormProps) {
 
                                     {/* Contracts List */}
                                     <div className="space-y-4">
-                                        <h4 className="text-lg font-semibold text-foreground mb-4">Historial de Contratos</h4>
+                                        <h4 className="text-sm font-semibold text-primary mb-4">Historial de Contratos</h4>
                                         {contracts.length === 0 ? (
                                             <div className="text-center py-6 border border-white/10 bg-white/5 rounded-xl">
                                                 <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mx-auto mb-4">
