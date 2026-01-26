@@ -93,7 +93,10 @@ export default async function MissionDetailPage({ params }: { params: Promise<{ 
                 </div>
 
                 <TabsContent value="board" className="flex-1 mt-4">
-                    <BoardView initialStages={project.stages || []} />
+                    <BoardView
+                        initialStages={project.stages || []}
+                        hasSecop={!!(project.tender?.secop_id || (project as any).secop_process_id)}
+                    />
                 </TabsContent>
 
                 <TabsContent value="gap" className="mt-4">

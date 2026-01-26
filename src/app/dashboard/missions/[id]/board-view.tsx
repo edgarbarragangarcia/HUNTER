@@ -136,7 +136,7 @@ function BoardColumn({ stage, tasks }: { stage: any, tasks: any[] }) {
     );
 }
 
-export default function BoardView({ initialStages }: { initialStages: any[] }) {
+export default function BoardView({ initialStages, hasSecop }: { initialStages: any[], hasSecop?: boolean }) {
     const [stages, setStages] = useState(initialStages);
     const [activeTask, setActiveTask] = useState<any>(null);
 
@@ -235,29 +235,33 @@ export default function BoardView({ initialStages }: { initialStages: any[] }) {
         if (!params.id) return;
         startTransition(async () => {
             try {
-                await syncProjectWithSecop(params.id as string);
-                // The page will revalidate automatically due to revalidatePath
+                const result = await syncProjectWithSecop(params.id as string);
+                if (result && 'error' in result) {
+                    alert("Error al sincronizar con SECOP: " + result.error);
+                }
             } catch (error) {
                 console.error("Sync failed:", error);
-                alert("Error al sincronizar con SECOP: " + (error as Error).message);
+                alert("Error de conexión: No se pudo completar la sincronización.");
             }
         });
     };
 
     return (
         <div className="space-y-4 h-full">
-            <div className="flex justify-end">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSync}
-                    disabled={isPending}
-                    className="gap-2"
-                >
-                    <RefreshCcw className={cn("w-4 h-4", isPending && "animate-spin")} />
-                    {isPending ? "Sincronizando..." : "Sincronizar con SECOP"}
-                </Button>
-            </div>
+            {hasSecop && (
+                <div className="flex justify-end">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleSync}
+                        disabled={isPending}
+                        className="gap-2"
+                    >
+                        <RefreshCcw className={cn("w-4 h-4", isPending && "animate-spin")} />
+                        {isPending ? "Sincronizando..." : "Sincronizar con SECOP"}
+                    </Button>
+                </div>
+            )}
 
             <DndContext
                 sensors={sensors}

@@ -265,49 +265,50 @@ export async function updateTaskStage(taskId: string, stageId: string) {
 }
 
 export async function syncProjectWithSecop(projectId: string) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Unauthorized");
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { error: "No autorizado" };
 
-    // 1. Get Project and Tender info
-    const { data: project, error: pError } = await supabase
-        .from('projects')
-        .select(`
+        // 1. Get Project and Tender info
+        const { data: project, error: pError } = await supabase
+            .from('projects')
+            .select(`
             *,
             tender:tender_id (secop_id, title, description)
         `)
-        .eq('id', projectId)
-        .single();
+            .eq('id', projectId)
+            .single();
 
-    if (pError || !project) throw new Error("Project not found");
-    const secopId = project.tender?.secop_id;
-    if (!secopId) throw new Error("This project is not linked to SECOP");
+        if (pError || !project) return { error: "Proyecto no encontrado" };
+        const secopId = project.tender?.secop_id || (project as any).secop_process_id;
+        if (!secopId) return { error: "Este proyecto no tiene vinculada una licitación de SECOP (falta ID de proceso)" };
 
-    // 2. Fetch data from SECOP
-    const [schedule, documents] = await Promise.all([
-        getProcessSchedule(secopId),
-        getProcessDocuments(secopId)
-    ]);
+        // 2. Fetch data from SECOP
+        const [schedule, documents] = await Promise.all([
+            getProcessSchedule(secopId),
+            getProcessDocuments(secopId)
+        ]);
 
-    if (schedule.length === 0 && documents.length === 0) {
-        throw new Error("No real data found in SECOP for this process.");
-    }
+        if (schedule.length === 0 && documents.length === 0) {
+            return { error: "No se encontraron datos reales en SECOP para este proceso." };
+        }
 
-    // 3. fetch current stages
-    const { data: stages } = await supabase
-        .from('project_stages')
-        .select('*')
-        .eq('project_id', projectId)
-        .order('order');
+        // 3. fetch current stages
+        const { data: stages } = await supabase
+            .from('project_stages')
+            .select('*')
+            .eq('project_id', projectId)
+            .order('order');
 
-    if (!stages || stages.length === 0) throw new Error("Project stages not found");
+        if (!stages || stages.length === 0) return { error: "Etapas del proyecto no encontradas" };
 
-    // 4. Use AI to categorize and map data
-    const apiKey = process.env.GEMINI_API_KEY;
-    const genAI = new GoogleGenerativeAI(apiKey!);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05" });
+        // 4. Use AI to categorize and map data
+        const apiKey = process.env.GEMINI_API_KEY;
+        const genAI = new GoogleGenerativeAI(apiKey!);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05" });
 
-    const prompt = `
+        const prompt = `
     Como experto en contratación pública en Colombia, analiza la siguiente información de SECOP II para una licitación.
     Tu tarea es generar una lista de TAREAS y ENTREGABLES organizada por ETAPAS.
     
@@ -337,30 +338,42 @@ export async function syncProjectWithSecop(projectId: string) {
     ]
     `;
 
-    const result = await model.generateContent(prompt);
-    const aiResponse = result.response.text();
-    const jsonStr = aiResponse.replace(/```json\n|\n```/g, '').replace(/```/g, '').trim();
-    const newTasks = JSON.parse(jsonStr);
+        const result = await model.generateContent(prompt);
+        const aiResponse = result.response.text();
+        console.log("SECOP AI RAW Response:", aiResponse);
 
-    // 5. Clean old auto-generated requirements (optional, but requested by 'real data' context)
-    await supabase
-        .from('project_tasks')
-        .delete()
-        .eq('project_id', projectId)
-        .eq('is_requirement', true);
+        let newTasks;
+        try {
+            const jsonStr = aiResponse.replace(/```json\n|\n```/g, '').replace(/```/g, '').trim();
+            newTasks = JSON.parse(jsonStr);
+        } catch (parseError) {
+            console.error("Failed to parse AI response as JSON:", aiResponse);
+            return { error: "La IA generó un formato inválido. Por favor intenta de nuevo." };
+        }
 
-    // 6. Insert new tasks
-    const tasksToInsert = newTasks.map((t: any) => ({
-        ...t,
-        project_id: projectId,
-        status: 'TODO',
-        is_requirement: true,
-        requirement_met: false
-    }));
+        // 5. Clean old auto-generated requirements (optional, but requested by 'real data' context)
+        await supabase
+            .from('project_tasks')
+            .delete()
+            .eq('project_id', projectId)
+            .eq('is_requirement', true);
 
-    const { error: iError } = await supabase.from('project_tasks').insert(tasksToInsert);
-    if (iError) throw iError;
+        // 6. Insert new tasks
+        const tasksToInsert = newTasks.map((t: any) => ({
+            ...t,
+            project_id: projectId,
+            status: 'TODO',
+            is_requirement: true,
+            requirement_met: false
+        }));
 
-    revalidatePath(`/dashboard/missions/${projectId}`);
-    return { success: true };
+        const { error: iError } = await supabase.from('project_tasks').insert(tasksToInsert);
+        if (iError) return { error: "Error al guardar tareas: " + iError.message };
+
+        revalidatePath(`/dashboard/missions/${projectId}`);
+        return { success: true };
+    } catch (error: any) {
+        console.error("Critical error in syncProjectWithSecop:", error);
+        return { error: error.message || "Ocurrió un error inesperado durante la sincronización" };
+    }
 }
