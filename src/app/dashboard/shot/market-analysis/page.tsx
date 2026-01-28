@@ -258,6 +258,28 @@ function ProcessCard({ proc, index }: { proc: SecopProcess & { matchAnalysis?: a
                                     </div>
                                 )}
                             </div>
+
+                            {/* Deliverables Section - Moved inside expanded area */}
+                            {matchAnalysis && (
+                                <div className="mb-4 space-y-2">
+                                    <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground uppercase tracking-wider">
+                                        <CheckCircle2 className="w-4 h-4 text-primary" />
+                                        <span>Entregables / Actividades</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                                        {getSuggestedDeliverables(proc).slice(0, 6).map((del, idx) => (
+                                            <span key={idx} className="px-2 py-1 rounded text-[10px] bg-primary/10 text-primary border border-primary/20 font-medium">
+                                                {del}
+                                            </span>
+                                        ))}
+                                        {getSuggestedDeliverables(proc).length > 6 && (
+                                            <span className="px-2 py-1 rounded text-[10px] bg-white/5 text-muted-foreground border border-white/10">
+                                                +{getSuggestedDeliverables(proc).length - 6} más
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </motion.div>
                 )}
@@ -266,25 +288,6 @@ function ProcessCard({ proc, index }: { proc: SecopProcess & { matchAnalysis?: a
             {/* Match Analysis Details (Always visible if match) */}
             {matchAnalysis && (
                 <>
-                    {/* Deliverables Section */}
-                    <div className="mb-3">
-                        <h5 className="text-xs font-semibold text-foreground mb-1 flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3 text-primary" />
-                            Entregables / Actividades
-                        </h5>
-                        <div className="flex flex-wrap gap-1.5">
-                            {getSuggestedDeliverables(proc).slice(0, 4).map((del, idx) => (
-                                <span key={idx} className="px-2 py-0.5 rounded text-[10px] bg-primary/10 text-primary border border-primary/20">
-                                    {del}
-                                </span>
-                            ))}
-                            {getSuggestedDeliverables(proc).length > 4 && (
-                                <span className="px-2 py-0.5 rounded text-[10px] bg-white/5 text-muted-foreground border border-white/10">
-                                    +{getSuggestedDeliverables(proc).length - 4} más
-                                </span>
-                            )}
-                        </div>
-                    </div>
 
                     {/* Reasons for Match */}
                     {matchAnalysis.reasons.length > 0 && (
@@ -377,6 +380,8 @@ export default function MarketAnalysisPage() {
     // New Filters
     const [showCorporateOnly, setShowCorporateOnly] = useState(true);
     const [hideNonActionable, setHideNonActionable] = useState(false);
+    const [selectedPhase, setSelectedPhase] = useState<string>("");
+    const [selectedStatus, setSelectedStatus] = useState<string>("");
 
     // Load filters from localStorage on mount
     useEffect(() => {
@@ -390,6 +395,8 @@ export default function MarketAnalysisPage() {
                 if (parsed.minAmount !== undefined) setMinAmount(parsed.minAmount);
                 if (parsed.maxAmount !== undefined) setMaxAmount(parsed.maxAmount);
                 if (parsed.searchQuery !== undefined) setSearchQuery(parsed.searchQuery);
+                if (parsed.selectedPhase !== undefined) setSelectedPhase(parsed.selectedPhase);
+                if (parsed.selectedStatus !== undefined) setSelectedStatus(parsed.selectedStatus);
             } catch (e) {
                 console.error("Error parsing saved filters:", e);
             }
@@ -404,10 +411,12 @@ export default function MarketAnalysisPage() {
             activeFilter,
             minAmount,
             maxAmount,
-            searchQuery
+            searchQuery,
+            selectedPhase,
+            selectedStatus
         };
         localStorage.setItem('market_analysis_filters', JSON.stringify(filtersToSave));
-    }, [showCorporateOnly, hideNonActionable, activeFilter, minAmount, maxAmount, searchQuery]);
+    }, [showCorporateOnly, hideNonActionable, activeFilter, minAmount, maxAmount, searchQuery, selectedPhase, selectedStatus]);
 
     useEffect(() => {
         // Load initial data
@@ -521,10 +530,12 @@ export default function MarketAnalysisPage() {
 
             const corporateOk = !showCorporateOnly || analysis.isCorporate;
             const actionableOk = !hideNonActionable || analysis.isActionable;
+            const phaseOk = !selectedPhase || proc.fase === selectedPhase;
+            const statusOk = !selectedStatus || proc.estado_del_proceso === selectedStatus;
 
-            return corporateOk && actionableOk;
+            return corporateOk && actionableOk && phaseOk && statusOk;
         });
-    }, [processes, showCorporateOnly, hideNonActionable]);
+    }, [processes, showCorporateOnly, hideNonActionable, selectedPhase, selectedStatus]);
 
     return (
         <div className="min-h-screen flex flex-col">
@@ -608,6 +619,37 @@ export default function MarketAnalysisPage() {
                                     onChange={(e) => setMaxAmount(e.target.value)}
                                     className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
                                 />
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs text-muted-foreground">Fase</label>
+                                <select
+                                    value={selectedPhase}
+                                    onChange={(e) => setSelectedPhase(e.target.value)}
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+                                >
+                                    <option value="">Todas las fases</option>
+                                    <option value="Presentación de oferta">Presentación de oferta</option>
+                                    <option value="Adjudicado">Adjudicado</option>
+                                    <option value="Celebrado">Celebrado</option>
+                                    <option value="Evaluación">Evaluación</option>
+                                    <option value="Desierto">Desierto</option>
+                                </select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs text-muted-foreground">Estado</label>
+                                <select
+                                    value={selectedStatus}
+                                    onChange={(e) => setSelectedStatus(e.target.value)}
+                                    className="w-full bg-black/20 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary/50"
+                                >
+                                    <option value="">Todos los estados</option>
+                                    <option value="Adjudicado">Adjudicado</option>
+                                    <option value="Activo">Activo</option>
+                                    <option value="Cerrado">Cerrado</option>
+                                    <option value="En evaluación">En evaluación</option>
+                                </select>
                             </div>
 
                             <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10">
