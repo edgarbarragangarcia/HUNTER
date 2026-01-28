@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getProcessSchedule, getProcessDocuments } from "@/lib/socrata";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { revalidatePath } from "next/cache";
+import { extractTextFromPdfUrl } from "@/lib/pdf";
 
 export async function getProjects() {
     const supabase = await createClient();
@@ -303,34 +304,66 @@ export async function syncProjectWithSecop(projectId: string) {
 
         if (!stages || stages.length === 0) return { error: "Etapas del proyecto no encontradas" };
 
-        // 4. Use AI to categorize and map data
+        // 4. Identify and extract text from key documents
+        const keyKeywords = ['anexo', 'pliego', 'estudio', 'técnico', 'tecnico', 'técnica', 'tecnica', 'condiciones'];
+        const relevantDocs = documents.filter((doc: any) => {
+            const name = (doc.nombre_del_documento || '').toLowerCase();
+            return keyKeywords.some(k => name.includes(k));
+        }).slice(0, 3); // Limit to top 3 relevant docs to avoid context overflow
+
+        console.log(`Found ${relevantDocs.length} relevant documents for parsing.`);
+
+        const docContents = await Promise.all(
+            relevantDocs.map(async (doc: any) => {
+                const url = typeof doc.link_del_documento === 'string'
+                    ? doc.link_del_documento
+                    : doc.link_del_documento?.url;
+
+                if (!url || !url.toLowerCase().endsWith('.pdf')) return null;
+
+                console.log(`Extracting text from: ${doc.nombre_del_documento}`);
+                const text = await extractTextFromPdfUrl(url);
+                return {
+                    name: doc.nombre_del_documento,
+                    content: text.slice(0, 10000) // Limit per document to 10k chars
+                };
+            })
+        );
+
+        const validContents = docContents.filter((c): c is { name: string, content: string } => c !== null && c.content.length > 0);
+
+        // 5. Use AI to categorize and map data
         const apiKey = process.env.GEMINI_API_KEY;
         const genAI = new GoogleGenerativeAI(apiKey!);
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite-preview-02-05" });
 
         const prompt = `
-    Como experto en contratación pública en Colombia, analiza la siguiente información de SECOP II para una licitación.
-    Tu tarea es generar una lista de TAREAS y ENTREGABLES organizada por ETAPAS.
+    Como experto en contratación pública en Colombia y analista de licitaciones, analiza la siguiente información de SECOP II.
+    Tu objetivo es extraer REQUERIMIENTOS REALES (obligaciones, perfiles técnicos, indicadores financieros) que el contratista debe cumplir.
     
     INFORMACIÓN DE SECOP:
     - Cronograma (Hitos): ${JSON.stringify(schedule)}
-    - Documentos registrados: ${JSON.stringify(documents)}
+    - Documentos registrados: ${JSON.stringify(documents.map((d: any) => d.nombre_del_documento))}
+    
+    CONTENIDO EXTRAÍDO DE DOCUMENTOS CLAVE:
+    ${validContents.map(c => `--- DOCUMENTO: ${c.name} ---\n${c.content}\n`).join('\n')}
     
     ETAPAS DISPONIBLES (Project Stages):
     ${stages.map(s => `- ID: ${s.id}, Nombre: ${s.name}`).join('\n')}
     
-    REGLAS:
-    1. Identifica qué documentos son de la etapa de "Iniciación" (como RUT, RUP, Documento Identidad).
+    REGLAS DE EXTRACCIÓN:
+    1. No inventes datos. Si el contenido del documento está disponible, úsalo para extraer obligaciones específicas (ej. "Entregar informe mensual", "Contar con ingeniero residente", "Póliza de cumplimiento del 20%").
     2. Identifica hitos del cronograma y conviértelos en tareas (ej. "Presentación de Oferta", "Audiencia de Adjudicación").
-    3. Para los hitos del cronograma, usa la fecha proporcionada.
-    4. Categoriza cada tarea en uno de los IDs de etapa proporcionados arriba.
+    3. Categoriza cada tarea en uno de los IDs de etapa proporcionados arriba. Use "Iniciación" para documentos legales y financieros previos, y "Ejecución/Planificación" para obligaciones del contrato.
+    4. Prioriza requerimientos CRITICAL (pólizas, requisitos habilitantes) y HIGH (obligaciones principales).
+    5. Para los hitos del cronograma, usa la fecha proporcionada en formato YYYY-MM-DD.
     
     RESPONDE EXCLUSIVAMENTE CON UN JSON ARRAY:
     [
       {
         "stage_id": "ID_DE_LA_ETAPA",
         "title": "Nombre de la tarea/entregable",
-        "description": "Breve descripción",
+        "description": "Breve descripción detallada basada en el documento",
         "priority": "HIGH" | "MEDIUM" | "CRITICAL",
         "due_date": "YYYY-MM-DD",
         "requirement_type": "legal" | "technical" | "financial"
@@ -340,7 +373,7 @@ export async function syncProjectWithSecop(projectId: string) {
 
         const result = await model.generateContent(prompt);
         const aiResponse = result.response.text();
-        console.log("SECOP AI RAW Response:", aiResponse);
+        console.log("SECOP AI RAW Response Size:", aiResponse.length);
 
         let newTasks;
         try {
