@@ -91,13 +91,16 @@ export async function analyzeTenderMatch(
 
     matchScore = Math.min(100, matchScore);
 
-    // Strengthened Actionable detection
+    // Strengthened Actionable detection - PATTERN MATCHING VERSION
     const closedPhases = ['Adjudicado', 'Celebrado', 'Liquidado', 'Finalizado'];
-    const closedStates = ['Adjudicado', 'Celebrado', 'Liquidado', 'No Adjudicado'];
+    const estadoLower = (process.estado_del_proceso || '').toLowerCase();
 
     const isActuallyClosed =
         closedPhases.includes(process.fase || '') ||
-        closedStates.includes(process.estado_del_proceso || '');
+        estadoLower.includes('adjudicado') ||
+        estadoLower.includes('celebrado') ||
+        estadoLower.includes('liquidado') ||
+        estadoLower.includes('finalizado');
 
     const isActionable = aiOverride?.isActionable !== undefined
         ? aiOverride.isActionable

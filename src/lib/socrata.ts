@@ -41,17 +41,20 @@ export async function searchSecopProcesses(query: string, limit: number = 20, fi
         // Construct where clause
         let whereClause = `fecha_de_publicacion_del >= '${dateStr}'`;
 
-        // Filter by Status/Phase - STRENGTHENED VERSION
+        // Filter by Status/Phase - FIXED VERSION WITH PATTERN MATCHING
         const activePhases = "'Presentación de oferta'";
-        const closedStates = "'Adjudicado', 'Celebrado', 'Liquidado', 'Finalizado'";
-        const activeStates = "'En curso', 'Publicado', 'Publicación'";
 
         if (filters?.status === 'active' || !filters?.status) {
-            // Must be in active phase AND NOT in a closed state
+            // Must be in active phase AND NOT contain closed keywords in estado_del_proceso
             whereClause += ` AND fase = ${activePhases}`;
-            whereClause += ` AND estado_del_proceso NOT IN (${closedStates})`;
+            // Use NOT LIKE to catch phrases like "Proceso adjudicado y celebrado"
+            whereClause += ` AND (estado_del_proceso IS NULL OR (`;
+            whereClause += `estado_del_proceso NOT LIKE '%djudicado%' AND `;
+            whereClause += `estado_del_proceso NOT LIKE '%elebrado%' AND `;
+            whereClause += `estado_del_proceso NOT LIKE '%iquidado%' AND `;
+            whereClause += `estado_del_proceso NOT LIKE '%inalizado%'))`;
         } else if (filters?.status === 'awarded') {
-            whereClause += ` AND (fase IN ('Adjudicado', 'Celebrado') OR estado_del_proceso IN ('Adjudicado', 'Celebrado'))`;
+            whereClause += ` AND (fase IN ('Adjudicado', 'Celebrado') OR estado_del_proceso LIKE '%djudicado%' OR estado_del_proceso LIKE '%elebrado%')`;
         }
 
         // Filters for Amount (Cuantía)
@@ -103,6 +106,17 @@ export async function searchSecopProcesses(query: string, limit: number = 20, fi
             const minOk = !filters?.minAmount || price >= filters.minAmount;
             const maxOk = !filters?.maxAmount || price <= filters.maxAmount;
 
+            // CRITICAL: Client-side estado check as safety net
+            if (filters?.status === 'active' || !filters?.status) {
+                const estado = (proc.estado_del_proceso || '').toLowerCase();
+                const isClosed = estado.includes('adjudicado') ||
+                    estado.includes('celebrado') ||
+                    estado.includes('liquidado') ||
+                    estado.includes('finalizado');
+
+                if (isClosed) return false; // Exclude closed processes from active search
+            }
+
             return hasValidPrice && minOk && maxOk;
         });
 
@@ -127,15 +141,18 @@ export async function getMarketMetrics(query: string, filters?: MarketFilters) {
 
         let whereClause = `fecha_de_publicacion_del >= '${dateStr}'`;
 
-        // Apply filters - STRENGTHENED VERSION
+        // Apply filters - FIXED VERSION WITH PATTERN MATCHING
         const activePhases = "'Presentación de oferta'";
-        const closedStates = "'Adjudicado', 'Celebrado', 'Liquidado', 'Finalizado'";
 
         if (filters?.status === 'active' || !filters?.status) {
             whereClause += ` AND fase = ${activePhases}`;
-            whereClause += ` AND estado_del_proceso NOT IN (${closedStates})`;
+            whereClause += ` AND (estado_del_proceso IS NULL OR (`;
+            whereClause += `estado_del_proceso NOT LIKE '%djudicado%' AND `;
+            whereClause += `estado_del_proceso NOT LIKE '%elebrado%' AND `;
+            whereClause += `estado_del_proceso NOT LIKE '%iquidado%' AND `;
+            whereClause += `estado_del_proceso NOT LIKE '%inalizado%'))`;
         } else if (filters?.status === 'awarded') {
-            whereClause += ` AND (fase IN ('Adjudicado', 'Celebrado') OR estado_del_proceso IN ('Adjudicado', 'Celebrado'))`;
+            whereClause += ` AND (fase IN ('Adjudicado', 'Celebrado') OR estado_del_proceso LIKE '%djudicado%' OR estado_del_proceso LIKE '%elebrado%')`;
         }
 
         if (filters?.minAmount) {
