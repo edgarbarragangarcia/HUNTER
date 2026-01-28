@@ -4,29 +4,25 @@ import { motion } from "framer-motion";
 import {
     Target,
     BarChart3,
-    Search,
-    Brain,
-    Eye,
     Trophy,
     Bot,
-    LineChart
 } from "lucide-react";
 import Link from "next/link";
 
 export default function ShotPage() {
     const modules = [
         {
-            title: "Ranking",
-            description: "Tu posición en el mercado frente a la competencia.",
-            icon: Trophy,
-            href: "/dashboard/shot/ranking",
-            color: "text-yellow-400",
-            bg: "bg-yellow-500/10",
-            hoverBg: "group-hover:bg-yellow-500/20"
+            title: "Análisis de Mercado",
+            description: "Exploración profunda de procesos activos y cronogramas de SECOP.",
+            icon: BarChart3,
+            href: "/dashboard/shot/market-analysis",
+            color: "text-cyan-400",
+            bg: "bg-cyan-500/10",
+            hoverBg: "group-hover:bg-cyan-500/20"
         },
         {
             title: "Copilot",
-            description: "Asistente inteligente para redacción y análisis.",
+            description: "Asistente inteligente con IA para redacción y análisis de pliegos.",
             icon: Bot,
             href: "/dashboard/shot/copilot",
             color: "text-green-400",
@@ -34,22 +30,13 @@ export default function ShotPage() {
             hoverBg: "group-hover:bg-green-500/20"
         },
         {
-            title: "Analytics",
-            description: "Panel de control empresarial y proyecciones.",
-            icon: LineChart,
-            href: "/dashboard/shot/analytics",
-            color: "text-indigo-400",
-            bg: "bg-indigo-500/10",
-            hoverBg: "group-hover:bg-indigo-500/20"
-        },
-        {
-            title: "Análisis de Mercado",
-            description: "Exploración profunda de datos históricos SECOP.",
-            icon: BarChart3,
-            href: "/dashboard/shot/market-analysis",
-            color: "text-cyan-400",
-            bg: "bg-cyan-500/10",
-            hoverBg: "group-hover:bg-cyan-500/20"
+            title: "Inteligencia y Ranking",
+            description: "Panel de control avanzado, proyecciones y tu posición frente a la competencia.",
+            icon: Trophy,
+            href: "/dashboard/shot/ranking",
+            color: "text-yellow-400",
+            bg: "bg-yellow-500/10",
+            hoverBg: "group-hover:bg-yellow-500/20"
         }
     ];
 

@@ -51,9 +51,9 @@ const sidebarLinks: SidebarItem[] = [
         icon: Target,
         subItems: [
             {
-                name: "Ranking",
-                href: "/dashboard/shot/ranking",
-                icon: Trophy,
+                name: "Análisis de Mercado",
+                href: "/dashboard/shot/market-analysis",
+                icon: BarChart3,
             },
             {
                 name: "Copilot",
@@ -61,14 +61,9 @@ const sidebarLinks: SidebarItem[] = [
                 icon: Bot,
             },
             {
-                name: "Analytics",
-                href: "/dashboard/shot/analytics",
-                icon: BarChart3,
-            },
-            {
-                name: "Market Analysis",
-                href: "/dashboard/shot/market-analysis",
-                icon: PieChart,
+                name: "Inteligencia y Ranking",
+                href: "/dashboard/shot/ranking",
+                icon: Trophy,
             },
         ],
     },
