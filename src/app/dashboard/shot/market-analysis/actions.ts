@@ -122,8 +122,8 @@ export async function searchMarketOpportunities(query: string, filters?: any) {
         status: filters?.hideNonActionable ? 'active' : 'all'
     };
 
-    // Integrate with SECOP API
-    const processes = await searchSecopProcesses(query, 150, socrataFilters as any);
+    // Integrate with SECOP API - Uses default limit of 300
+    const processes = await searchSecopProcesses(query, undefined, socrataFilters as any);
 
     // Get company data for match analysis
     const company = await getCompanyData();

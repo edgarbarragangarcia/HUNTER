@@ -29,7 +29,7 @@ export interface MarketFilters {
     status?: 'active' | 'awarded' | 'all';
 }
 
-export async function searchSecopProcesses(query: string, limit: number = 20, filters?: MarketFilters): Promise<SecopProcess[]> {
+export async function searchSecopProcesses(query: string, limit: number = 300, filters?: MarketFilters): Promise<SecopProcess[]> {
     try {
         // Calculate date threshold (1 month ago for active, 6 months for awarded/history)
         const dateThreshold = new Date();
@@ -41,20 +41,15 @@ export async function searchSecopProcesses(query: string, limit: number = 20, fi
         // Construct where clause
         let whereClause = `fecha_de_publicacion_del >= '${dateStr}'`;
 
-        // Filter by Status/Phase - FIXED VERSION WITH PATTERN MATCHING
+        // Filter by Status/Phase - SIMPLIFIED VERSION (Client-side filtering is primary)
+        // We keep the WHERE clause simple because Socrata's LIKE can be unreliable
         const activePhases = "'Presentación de oferta'";
 
         if (filters?.status === 'active' || !filters?.status) {
-            // Must be in active phase AND NOT contain closed keywords in estado_del_proceso
+            // Simple phase check - client-side will do heavy lifting
             whereClause += ` AND fase = ${activePhases}`;
-            // Use NOT LIKE to catch phrases like "Proceso adjudicado y celebrado"
-            whereClause += ` AND (estado_del_proceso IS NULL OR (`;
-            whereClause += `estado_del_proceso NOT LIKE '%djudicado%' AND `;
-            whereClause += `estado_del_proceso NOT LIKE '%elebrado%' AND `;
-            whereClause += `estado_del_proceso NOT LIKE '%iquidado%' AND `;
-            whereClause += `estado_del_proceso NOT LIKE '%inalizado%'))`;
         } else if (filters?.status === 'awarded') {
-            whereClause += ` AND (fase IN ('Adjudicado', 'Celebrado') OR estado_del_proceso LIKE '%djudicado%' OR estado_del_proceso LIKE '%elebrado%')`;
+            whereClause += ` AND (fase = 'Adjudicado' OR fase = 'Celebrado')`;
         }
 
         // Filters for Amount (Cuantía)
@@ -81,7 +76,9 @@ export async function searchSecopProcesses(query: string, limit: number = 20, fi
             headers["X-App-Token"] = APP_TOKEN;
         }
 
-        console.log(`Querying SECOP: ${query} [${filters?.status || 'active'}]`);
+
+        console.log(`[SECOP API] Query: "${query}" | Status: ${filters?.status || 'active'} | Limit: ${limit}`);
+        console.log(`[SECOP API] WHERE Clause: ${whereClause}`);
 
         const response = await fetch(url.toString(), { headers, next: { revalidate: 3600 } });
 
@@ -97,7 +94,7 @@ export async function searchSecopProcesses(query: string, limit: number = 20, fi
 
         const data = await response.json();
 
-        // Client-side filtering/validation
+        // Client-side filtering/validation with detailed logging
         const filteredData = data.filter((proc: SecopProcess) => {
             const price = parseFloat(proc.precio_base || '0');
             const hasValidPrice = price > 0;
@@ -109,18 +106,32 @@ export async function searchSecopProcesses(query: string, limit: number = 20, fi
             // CRITICAL: Client-side estado check as safety net
             if (filters?.status === 'active' || !filters?.status) {
                 const estado = (proc.estado_del_proceso || '').toLowerCase();
-                const isClosed = estado.includes('adjudicado') ||
+                const fase = (proc.fase || '').toLowerCase();
+
+                const isClosed =
+                    estado.includes('adjudicado') ||
                     estado.includes('celebrado') ||
                     estado.includes('liquidado') ||
-                    estado.includes('finalizado');
+                    estado.includes('finalizado') ||
+                    estado.includes('desierto') ||
+                    fase.includes('adjudicado') ||
+                    fase.includes('celebrado');
 
-                if (isClosed) return false; // Exclude closed processes from active search
+                if (isClosed) {
+                    console.log(`[SECOP FILTER] Excluded: ${proc.id_del_proceso} | Fase: "${proc.fase}" | Estado: "${proc.estado_del_proceso}"`);
+                    return false;
+                }
             }
 
-            return hasValidPrice && minOk && maxOk;
+            const passed = hasValidPrice && minOk && maxOk;
+            if (!passed && hasValidPrice) {
+                console.log(`[SECOP FILTER] Excluded by price: ${proc.id_del_proceso} | Price: ${price} | Min: ${filters?.minAmount} | Max: ${filters?.maxAmount}`);
+            }
+
+            return passed;
         });
 
-        console.log(`SECOP returned ${data.length} items, ${filteredData.length} after filter`);
+        console.log(`[SECOP API] Raw results: ${data.length} | After filtering: ${filteredData.length} | Excluded: ${data.length - filteredData.length}`);
 
         return filteredData as SecopProcess[];
 
@@ -141,18 +152,13 @@ export async function getMarketMetrics(query: string, filters?: MarketFilters) {
 
         let whereClause = `fecha_de_publicacion_del >= '${dateStr}'`;
 
-        // Apply filters - FIXED VERSION WITH PATTERN MATCHING
+        // Apply filters - SIMPLIFIED VERSION
         const activePhases = "'Presentación de oferta'";
 
         if (filters?.status === 'active' || !filters?.status) {
             whereClause += ` AND fase = ${activePhases}`;
-            whereClause += ` AND (estado_del_proceso IS NULL OR (`;
-            whereClause += `estado_del_proceso NOT LIKE '%djudicado%' AND `;
-            whereClause += `estado_del_proceso NOT LIKE '%elebrado%' AND `;
-            whereClause += `estado_del_proceso NOT LIKE '%iquidado%' AND `;
-            whereClause += `estado_del_proceso NOT LIKE '%inalizado%'))`;
         } else if (filters?.status === 'awarded') {
-            whereClause += ` AND (fase IN ('Adjudicado', 'Celebrado') OR estado_del_proceso LIKE '%djudicado%' OR estado_del_proceso LIKE '%elebrado%')`;
+            whereClause += ` AND (fase = 'Adjudicado' OR fase = 'Celebrado')`;
         }
 
         if (filters?.minAmount) {
