@@ -24,6 +24,26 @@ export interface SecopProcess {
     fecha_de_recepcion_de_respuestas?: string;
     fecha_de_apertura_de_respuesta?: string;
     fecha_adjudicacion?: string;
+    // Additional fields that might be useful
+    precio_base_mas_iva?: string;
+    moneda?: string;
+}
+
+export interface SecopMilestone {
+    id_del_proceso: string;
+    referencia_del_procedimiento: string;
+    nombre_etapa: string;
+    fecha: string;
+    estado_de_la_etapa: string;
+}
+
+export interface SecopScheduleSummary {
+    signatureDate?: string;
+    executionStartDate?: string;
+    executionEndDate?: string;
+    publicationDate?: string;
+    bidOpeningDate?: string;
+    bidClosingDate?: string;
 }
 
 // SECOP II Datasets
@@ -419,4 +439,27 @@ export async function getProcessDocuments(secopId: string): Promise<SecopDocumen
         console.error("Error fetching process documents:", error);
         return [];
     }
+}
+
+export function extractScheduleSummary(milestones: SecopMilestone[]): SecopScheduleSummary {
+    const summary: SecopScheduleSummary = {};
+
+    milestones.forEach(m => {
+        const name = m.nombre_etapa.toLowerCase();
+        if (name.includes('firma del contrato') || name.includes('firma contrato')) {
+            summary.signatureDate = m.fecha;
+        } else if (name.includes('inicio de ejecución') || name.includes('fecha de inicio de ejecución')) {
+            summary.executionStartDate = m.fecha;
+        } else if (name.includes('fin del contrato') || name.includes('plazo de ejecución del contrato')) {
+            summary.executionEndDate = m.fecha;
+        } else if (name.includes('publicación del proceso') || name.includes('publicación del procedimiento')) {
+            summary.publicationDate = m.fecha;
+        } else if (name.includes('apertura de sobres') || name.includes('apertura de respuesta')) {
+            summary.bidOpeningDate = m.fecha;
+        } else if (name.includes('recepción de respuestas') || name.includes('cierre de ofertas')) {
+            summary.bidClosingDate = m.fecha;
+        }
+    });
+
+    return summary;
 }

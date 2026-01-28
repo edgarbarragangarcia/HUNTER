@@ -7,7 +7,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { cn, formatCurrency } from "@/lib/utils";
 import { searchMarketOpportunities, getMarketInsights, getUserCompanyForFilter, searchOpportunitiesByCompany } from "./actions";
-import { SecopProcess } from "@/lib/socrata";
+import { SecopProcess, getProcessSchedule, extractScheduleSummary, SecopScheduleSummary } from "@/lib/socrata";
 import { evaluateProcessRequirements, addProcessToMissions } from "./process-actions";
 import { CompetitorHistoryModal } from "./competitor-history-modal";
 import { extractUNSPSCFromProcess, getSuggestedDeliverables } from "./match-helpers";
@@ -16,7 +16,29 @@ import { toast } from "sonner";
 function ProcessCard({ proc, index }: { proc: SecopProcess & { matchAnalysis?: any }, index: number }) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [addingToMissions, setAddingToMissions] = useState<string | null>(null);
+    const [loadingSchedule, setLoadingSchedule] = useState(false);
+    const [scheduleSummary, setScheduleSummary] = useState<SecopScheduleSummary | null>(null);
     const router = useRouter();
+
+    useEffect(() => {
+        const fetchSchedule = async () => {
+            if (isExpanded && !scheduleSummary && !loadingSchedule) {
+                setLoadingSchedule(true);
+                try {
+                    const milestones = await getProcessSchedule(proc.id_del_proceso);
+                    if (milestones && milestones.length > 0) {
+                        const summary = extractScheduleSummary(milestones);
+                        setScheduleSummary(summary);
+                    }
+                } catch (error) {
+                    console.error("Error loading schedule:", error);
+                } finally {
+                    setLoadingSchedule(false);
+                }
+            }
+        };
+        fetchSchedule();
+    }, [isExpanded, proc.id_del_proceso, scheduleSummary, loadingSchedule]);
 
     const matchAnalysis = proc.matchAnalysis;
     const isMatch = matchAnalysis?.isMatch || false;
@@ -170,33 +192,68 @@ function ProcessCard({ proc, index }: { proc: SecopProcess & { matchAnalysis?: a
                                 <span>Cronograma del Proceso</span>
                             </div>
                             <div className="grid grid-cols-1 gap-2 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/10">
-                                {proc.fecha_de_recepcion_de_respuestas && (
+                                {loadingSchedule && (
+                                    <div className="flex items-center gap-2 py-2 text-[10px] text-zinc-500 italic">
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                        <span>Cargando cronograma oficial...</span>
+                                    </div>
+                                )}
+
+                                {/* Publication Date */}
+                                {(scheduleSummary?.publicationDate || proc.fecha_de_publicacion_del) && (
+                                    <div className="flex items-center justify-between text-[11px]">
+                                        <span className="text-zinc-400">Publicatión:</span>
+                                        <span className="text-zinc-200 font-medium font-mono">
+                                            {new Date(scheduleSummary?.publicationDate || proc.fecha_de_publicacion_del).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {/* Bid Closing */}
+                                {(scheduleSummary?.bidClosingDate || proc.fecha_de_recepcion_de_respuestas) && (
                                     <div className="flex items-center justify-between text-[11px]">
                                         <span className="text-zinc-400">Cierre de ofertas:</span>
-                                        <span className="text-zinc-200 font-medium">
-                                            {new Date(proc.fecha_de_recepcion_de_respuestas).toLocaleString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                        <span className="text-zinc-200 font-medium font-mono">
+                                            {new Date(scheduleSummary?.bidClosingDate || proc.fecha_de_recepcion_de_respuestas || '').toLocaleString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     </div>
                                 )}
-                                {proc.fecha_adjudicacion && (
+
+                                {/* Contract Signature */}
+                                {(scheduleSummary?.signatureDate || (!proc.fecha_adjudicacion && !loadingSchedule)) && (
                                     <div className="flex items-center justify-between text-[11px]">
-                                        <span className="text-zinc-400">Adjudicación:</span>
-                                        <span className="text-zinc-200 font-medium">
-                                            {new Date(proc.fecha_adjudicacion).toLocaleString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                        <span className="text-zinc-400">Firma del Contrato:</span>
+                                        <span className={cn(
+                                            "font-medium font-mono",
+                                            scheduleSummary?.signatureDate ? "text-primary" : "text-zinc-500 italic"
+                                        )}>
+                                            {scheduleSummary?.signatureDate
+                                                ? new Date(scheduleSummary.signatureDate).toLocaleDateString()
+                                                : new Date(new Date(proc.fecha_de_publicacion_del).getTime() + (30 * 24 * 60 * 60 * 1000)).toLocaleDateString() + ' (Est.)'
+                                            }
                                         </span>
                                     </div>
                                 )}
-                                <div className="flex items-center justify-between text-[11px]">
-                                    <span className="text-zinc-400">Plazo ejecución:</span>
-                                    <span className="text-zinc-200 font-medium">
-                                        {proc.duracion ? `${proc.duracion} ${proc.unidad_de_duracion || ''}` : 'Ver pliegos'}
-                                    </span>
-                                </div>
-                                {!proc.fecha_adjudicacion && (
-                                    <div className="flex items-center justify-between text-[11px] opacity-70 italic">
-                                        <span className="text-zinc-500">Estimado Firma:</span>
-                                        <span className="text-zinc-500">
-                                            {new Date(new Date(proc.fecha_de_publicacion_del).getTime() + (30 * 24 * 60 * 60 * 1000)).toLocaleDateString()}
+
+                                {/* Execution Start */}
+                                {scheduleSummary?.executionStartDate && (
+                                    <div className="flex items-center justify-between text-[11px]">
+                                        <span className="text-zinc-400">Inicio ejecución:</span>
+                                        <span className="text-primary font-medium font-mono">
+                                            {new Date(scheduleSummary.executionStartDate).toLocaleDateString()}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {/* Execution End / Deadline */}
+                                {(scheduleSummary?.executionEndDate || proc.duracion) && (
+                                    <div className="flex items-center justify-between text-[11px]">
+                                        <span className="text-zinc-400">Plazo ejecución:</span>
+                                        <span className="text-zinc-200 font-medium font-mono">
+                                            {scheduleSummary?.executionEndDate
+                                                ? new Date(scheduleSummary.executionEndDate).toLocaleDateString()
+                                                : (proc.duracion ? `${proc.duracion} ${proc.unidad_de_duracion || ''}` : 'Ver pliegos')
+                                            }
                                         </span>
                                     </div>
                                 )}
