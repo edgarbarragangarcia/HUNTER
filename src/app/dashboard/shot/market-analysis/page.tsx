@@ -463,8 +463,15 @@ export default function MarketAnalysisPage() {
 
             const corporateOk = !showCorporateOnly || analysis.isCorporate;
             const actionableOk = !hideNonActionable || analysis.isActionable;
-            const phaseOk = !selectedPhase || proc.fase === selectedPhase;
-            const statusOk = !selectedStatus || proc.estado_del_proceso === selectedStatus;
+            const phaseOk = !selectedPhase || (
+                proc.fase === selectedPhase &&
+                (selectedPhase === 'Presentación de oferta' ? analysis.isActionable : true)
+            );
+            const statusOk = !selectedStatus || (
+                (proc.estado_del_proceso === selectedStatus) ||
+                (proc.estado_del_procedimiento === selectedStatus) ||
+                (proc.estado_resumen === selectedStatus)
+            );
 
             return corporateOk && actionableOk && phaseOk && statusOk;
         });

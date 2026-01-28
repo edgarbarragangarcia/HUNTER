@@ -95,6 +95,8 @@ export async function analyzeTenderMatch(
     // Strengthened Actionable detection - PATTERN MATCHING VERSION
     const closedPhases = ['Adjudicado', 'Celebrado', 'Liquidado', 'Finalizado', 'Desierto'];
     const estadoLower = (process.estado_del_proceso || '').toLowerCase();
+    const estadoProcLower = (process.estado_del_procedimiento || '').toLowerCase();
+    const estadoResumenLower = (process.estado_resumen || '').toLowerCase();
     const faseLower = (process.fase || '').toLowerCase();
 
     const isActuallyClosed =
@@ -104,6 +106,13 @@ export async function analyzeTenderMatch(
         estadoLower.includes('liquidado') ||
         estadoLower.includes('finalizado') ||
         estadoLower.includes('desierto') ||
+        estadoProcLower.includes('adjudicado') ||
+        estadoProcLower.includes('celebrado') ||
+        estadoProcLower.includes('liquidado') ||
+        estadoProcLower.includes('finalizado') ||
+        estadoProcLower.includes('desierto') ||
+        estadoResumenLower.includes('adjudicado') ||
+        estadoResumenLower.includes('celebrado') ||
         faseLower.includes('adjudicado') ||
         faseLower.includes('celebrado');
 
