@@ -70,10 +70,11 @@ export async function classifyProcessesAI(processes: { id: string, title: string
         const prompt = `
         Analiza el siguiente lote de licitaciones públicas en Colombia y clasifícalas para una EMPRESA.
         
-        REGLAS DE CLASIFICACIÓN:
-        1. isCorporate: TRUE si el contrato es para una empresa (Obra, Suministro, Consultoría, Compraventa). FALSE si es "Prestación de servicios de apoyo a la gestión" o similar, destinado claramente a una Persona Natural.
-        2. isActionable: TRUE si el proceso está abierto a recibir ofertas hoy. FALSE si parece haber pasado la fecha o ya está en ejecución.
-        3. advice: Un consejo táctico corto (máx 15 palabras). Ej: "Aliarse con socio financiero", "Ideal para pyme local", "Requiere RUP actualizado".
+        REGLAS DE CLASIFICACIÓN (CRÍTICO):
+        1. isCorporate: TRUE si el contrato es para una EMPRESA (Ejemplos: Obra Pública, Interventoría, Suministros, Consultoría Técnica, Compraventa, Mantenimiento de Infraestructura).
+           isCorporate: FALSE si el contrato es para PERSONA NATURAL. Identificadores clave: "apoyo a la gestión", "auxiliar", "honorarios", "servicios profesionales de carácter personal", "asistente", "profesional universitario para apoyo".
+        2. isActionable: TRUE si el proceso tiene cronograma vigente para presentar ofertas hoy. FALSE si ya está adjudicado, celebrado o liquidado.
+        3. advice: Un consejo táctico de experto (máx 15 palabras). Ej: "Consorcio necesario por capacidad K", "Enfocarse en precio", "Requiere experiencia en mantenimiento vial".
         
         LOTE DE PROCESOS:
         ${processesText}

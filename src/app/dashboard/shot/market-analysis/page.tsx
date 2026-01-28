@@ -30,6 +30,37 @@ export default function MarketAnalysisPage() {
     const [showCorporateOnly, setShowCorporateOnly] = useState(true);
     const [hideNonActionable, setHideNonActionable] = useState(false);
 
+    // Load filters from localStorage on mount
+    useEffect(() => {
+        const savedFilters = localStorage.getItem('market_analysis_filters');
+        if (savedFilters) {
+            try {
+                const parsed = JSON.parse(savedFilters);
+                if (parsed.showCorporateOnly !== undefined) setShowCorporateOnly(parsed.showCorporateOnly);
+                if (parsed.hideNonActionable !== undefined) setHideNonActionable(parsed.hideNonActionable);
+                if (parsed.activeFilter !== undefined) setActiveFilter(parsed.activeFilter);
+                if (parsed.minAmount !== undefined) setMinAmount(parsed.minAmount);
+                if (parsed.maxAmount !== undefined) setMaxAmount(parsed.maxAmount);
+                if (parsed.searchQuery !== undefined) setSearchQuery(parsed.searchQuery);
+            } catch (e) {
+                console.error("Error parsing saved filters:", e);
+            }
+        }
+    }, []);
+
+    // Save filters whenever they change
+    useEffect(() => {
+        const filtersToSave = {
+            showCorporateOnly,
+            hideNonActionable,
+            activeFilter,
+            minAmount,
+            maxAmount,
+            searchQuery
+        };
+        localStorage.setItem('market_analysis_filters', JSON.stringify(filtersToSave));
+    }, [showCorporateOnly, hideNonActionable, activeFilter, minAmount, maxAmount, searchQuery]);
+
     useEffect(() => {
         // Load initial data
         const loadData = async () => {
@@ -37,7 +68,24 @@ export default function MarketAnalysisPage() {
                 const company = await getUserCompanyForFilter();
                 setUserCompany(company);
 
-                // Default search
+                // Default search using persisted or initial values
+                const savedFilters = localStorage.getItem('market_analysis_filters');
+                if (savedFilters) {
+                    const parsed = JSON.parse(savedFilters);
+                    if (parsed.searchQuery) {
+                        handleSearch(parsed.searchQuery);
+                        return;
+                    }
+                    if (parsed.activeFilter && parsed.activeFilter !== 'todos') {
+                        if (parsed.activeFilter === 'company' && company) {
+                            handleSearch(company.name, true);
+                        } else {
+                            handleSearch(parsed.activeFilter);
+                        }
+                        return;
+                    }
+                }
+
                 handleSearch("tecnologia");
             } catch (error) {
                 console.error("Error loading initial data:", error);
