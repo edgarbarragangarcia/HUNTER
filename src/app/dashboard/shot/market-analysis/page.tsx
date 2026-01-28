@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Search, Filter, TrendingUp, DollarSign, Users, ArrowLeft, Building2, FileText, Loader2, ExternalLink, Target, CheckCircle2, Bot } from "lucide-react";
+import { Search, Filter, TrendingUp, DollarSign, Users, ArrowLeft, Building2, FileText, Loader2, ExternalLink, Target, CheckCircle2, Bot, Calendar, Clock } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -405,7 +405,15 @@ export default function MarketAnalysisPage() {
                                                     </div>
                                                 )}
                                             </div>
-                                            <span className="text-xs text-muted-foreground">{new Date(proc.fecha_de_publicacion_del).toLocaleDateString()}</span>
+                                            <div className="text-right">
+                                                <div className="flex items-center gap-1 text-[10px] text-muted-foreground uppercase font-semibold">
+                                                    <Calendar className="w-3 h-3 text-primary" />
+                                                    <span>Publicado</span>
+                                                </div>
+                                                <span className="text-xs text-foreground font-medium">
+                                                    {new Date(proc.fecha_de_publicacion_del).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                </span>
+                                            </div>
                                         </div>
                                         <h4 className="text-sm font-medium text-foreground mb-1 line-clamp-2">
                                             {proc.descripci_n_del_procedimiento}
@@ -493,9 +501,18 @@ export default function MarketAnalysisPage() {
                                         )}
 
                                         <div className="flex items-center justify-between pt-3 border-t border-white/5">
-                                            <div className="text-xs">
-                                                <span className="text-muted-foreground">Cuantía:</span>
-                                                <span className="text-foreground font-medium ml-1">{formatCurrency(proc.precio_base)}</span>
+                                            <div className="flex flex-col gap-1">
+                                                <div className="text-xs flex items-center gap-1">
+                                                    <DollarSign className="w-3 h-3 text-muted-foreground" />
+                                                    <span className="text-muted-foreground">Cuantía:</span>
+                                                    <span className="text-foreground font-semibold ml-1">{formatCurrency(proc.precio_base)}</span>
+                                                </div>
+                                                {proc.fecha_de_ultima_publicaci && (
+                                                    <div className="text-[10px] flex items-center gap-1 text-zinc-500">
+                                                        <Clock className="w-3 h-3" />
+                                                        <span>Act: {new Date(proc.fecha_de_ultima_publicaci).toLocaleDateString()}</span>
+                                                    </div>
+                                                )}
                                             </div>
                                             <div className="flex gap-2">
                                                 <button

@@ -15,6 +15,7 @@ export interface SecopProcess {
     nombre_del_proveedor?: string;
     valor_total_adjudicacion?: string;
     estado_del_proceso?: string;
+    fecha_de_ultima_publicaci?: string;
 }
 
 // SECOP II Datasets
