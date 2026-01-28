@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Search, Filter, TrendingUp, DollarSign, Users, ArrowLeft, Building2, FileText, Loader2, ExternalLink, Target, CheckCircle2, Bot, Calendar, Clock, Info, ShieldCheck, Timer } from "lucide-react";
+import { Search, Filter, TrendingUp, DollarSign, Users, ArrowLeft, Building2, FileText, Loader2, ExternalLink, Target, CheckCircle2, Bot, Calendar, Clock, Info, ShieldCheck, Timer, GanttChartSquare } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -464,6 +464,47 @@ export default function MarketAnalysisPage() {
                                                 <p className="text-[11px] text-zinc-400 leading-tight italic line-clamp-2">
                                                     {proc.justificaci_n_modalidad_de || 'N/A'}
                                                 </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Cronograma / Hitos */}
+                                        <div className="mb-4 space-y-2">
+                                            <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground uppercase tracking-wider">
+                                                <GanttChartSquare className="w-4 h-4 text-primary" />
+                                                <span>Cronograma del Proceso</span>
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-2 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/10">
+                                                {proc.fecha_de_recepcion_de_respuestas && (
+                                                    <div className="flex items-center justify-between text-[11px]">
+                                                        <span className="text-zinc-400">Cierre de ofertas:</span>
+                                                        <span className="text-zinc-200 font-medium">
+                                                            {new Date(proc.fecha_de_recepcion_de_respuestas).toLocaleString('es-CO', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {proc.fecha_adjudicacion && (
+                                                    <div className="flex items-center justify-between text-[11px]">
+                                                        <span className="text-zinc-400">Adjudicación:</span>
+                                                        <span className="text-zinc-200 font-medium">
+                                                            {new Date(proc.fecha_adjudicacion).toLocaleString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center justify-between text-[11px]">
+                                                    <span className="text-zinc-400">Plazo ejecución:</span>
+                                                    <span className="text-zinc-200 font-medium">
+                                                        {proc.duracion ? `${proc.duracion} ${proc.unidad_de_duracion || ''}` : 'Ver pliegos'}
+                                                    </span>
+                                                </div>
+                                                {/* Simulated "Firma" based on duration if not present */}
+                                                {!proc.fecha_adjudicacion && (
+                                                    <div className="flex items-center justify-between text-[11px] opacity-70 italic">
+                                                        <span className="text-zinc-500">Estimado Firma:</span>
+                                                        <span className="text-zinc-500">
+                                                            {new Date(new Date(proc.fecha_de_publicacion_del).getTime() + (30 * 24 * 60 * 60 * 1000)).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 

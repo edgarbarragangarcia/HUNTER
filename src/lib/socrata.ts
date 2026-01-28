@@ -21,6 +21,9 @@ export interface SecopProcess {
     unidad_de_duracion?: string;
     estado_del_procedimiento?: string;
     estado_resumen?: string;
+    fecha_de_recepcion_de_respuestas?: string;
+    fecha_de_apertura_de_respuesta?: string;
+    fecha_adjudicacion?: string;
 }
 
 // SECOP II Datasets
