@@ -1,7 +1,6 @@
-const pdf = require('pdf-parse');
-
 export async function extractTextFromPdfUrl(url: string): Promise<string> {
     try {
+        const pdf = require('pdf-parse');
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`Failed to fetch PDF: ${response.statusText}`);
