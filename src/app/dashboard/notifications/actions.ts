@@ -55,7 +55,7 @@ export async function getAlertSettings() {
 
 export async function markAsRead(notificationId: string) {
     const supabase = await createClient();
-    
+
     const { error } = await supabase
         .from('notifications')
         .update({ read: true })
@@ -139,7 +139,7 @@ function getDemoNotifications(): Notification[] {
             title: 'Licitación de alta probabilidad',
             message: 'IA detectó oportunidad con 87% de compatibilidad: "Servicios de mantenimiento vial" - $890M',
             read: true,
-            action_url: '/dashboard/shot/predictions',
+            action_url: '/dashboard/shot/market-analysis',
             created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
         },
         {

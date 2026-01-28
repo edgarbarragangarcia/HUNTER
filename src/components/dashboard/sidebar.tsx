@@ -14,7 +14,6 @@ import {
     Target,
     Rocket,
     ChevronDown,
-    LineChart,
     Bot,
     BarChart3,
     Activity,
@@ -51,12 +50,6 @@ const sidebarLinks: SidebarItem[] = [
         href: "/dashboard/shot",
         icon: Target,
         subItems: [
-            {
-                name: "Predictions",
-                href: "/dashboard/shot/predictions",
-                icon: LineChart,
-            },
-
             {
                 name: "Ranking",
                 href: "/dashboard/shot/ranking",

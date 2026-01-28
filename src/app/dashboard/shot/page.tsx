@@ -9,23 +9,12 @@ import {
     Eye,
     Trophy,
     Bot,
-    LineChart,
-    Sparkles
+    LineChart
 } from "lucide-react";
 import Link from "next/link";
 
 export default function ShotPage() {
     const modules = [
-        {
-            title: "Predicciones IA",
-            description: "Oportunidades de alta probabilidad y detección de riesgos.",
-            icon: Sparkles,
-            href: "/dashboard/shot/predictions",
-            color: "text-purple-400",
-            bg: "bg-purple-500/10",
-            hoverBg: "group-hover:bg-purple-500/20"
-        },
-
         {
             title: "Ranking",
             description: "Tu posición en el mercado frente a la competencia.",

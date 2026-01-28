@@ -3,7 +3,7 @@
 import { getCompanyData, getCompanyContracts, getExperienceByUNSPSC, getContractStats } from "@/lib/company-data";
 import { createClient } from "@/lib/supabase/server";
 import { searchSecopProcesses, getMarketMetrics, searchOpportunitiesByUNSPSC, SecopProcess } from "@/lib/socrata";
-import { classifyProcessesAI } from "../predictions/ai-actions";
+import { classifyProcessesAI } from "./ai-actions";
 
 export async function getMarketTrends() {
     const company = await getCompanyData();
