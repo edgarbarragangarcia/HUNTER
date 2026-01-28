@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Search, Filter, TrendingUp, DollarSign, Users, ArrowLeft, Building2, FileText, Loader2, ExternalLink, Target, CheckCircle2, Bot, Calendar, Clock } from "lucide-react";
+import { Search, Filter, TrendingUp, DollarSign, Users, ArrowLeft, Building2, FileText, Loader2, ExternalLink, Target, CheckCircle2, Bot, Calendar, Clock, Info, ShieldCheck, Timer } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -418,9 +418,53 @@ export default function MarketAnalysisPage() {
                                         <h4 className="text-sm font-medium text-foreground mb-1 line-clamp-2">
                                             {proc.descripci_n_del_procedimiento}
                                         </h4>
-                                        <div className="flex items-center gap-2 text-xs text-zinc-400 mb-3">
-                                            <Building2 className="w-3 h-3" />
+                                        <div className="flex items-center gap-2 text-xs text-zinc-400 mb-4">
+                                            <Building2 className="w-3 h-3 text-primary/70" />
                                             <span className="truncate max-w-[200px]">{proc.entidad}</span>
+                                        </div>
+
+                                        {/* Informacion Detallada del Proceso */}
+                                        <div className="grid grid-cols-2 gap-3 mb-4 p-3 rounded-lg bg-black/30 border border-white/5 shadow-inner">
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 uppercase font-bold tracking-wider">
+                                                    <Info className="w-3 h-3" />
+                                                    <span>Fase</span>
+                                                </div>
+                                                <p className="text-xs text-zinc-200 font-medium">{proc.fase || 'N/A'}</p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 uppercase font-bold tracking-wider">
+                                                    <ShieldCheck className="w-3 h-3" />
+                                                    <span>Estado</span>
+                                                </div>
+                                                <p className="text-xs text-zinc-200 font-medium truncate" title={proc.estado_resumen || proc.estado_del_procedimiento}>
+                                                    {proc.estado_resumen || proc.estado_del_procedimiento || 'N/A'}
+                                                </p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 uppercase font-bold tracking-wider">
+                                                    <FileText className="w-3 h-3" />
+                                                    <span>Tipo Contrato</span>
+                                                </div>
+                                                <p className="text-xs text-zinc-200 font-medium truncate">{proc.tipo_de_contrato || 'N/A'}</p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 uppercase font-bold tracking-wider">
+                                                    <Timer className="w-3 h-3" />
+                                                    <span>Duración</span>
+                                                </div>
+                                                <p className="text-xs text-zinc-200 font-medium">
+                                                    {proc.duracion ? `${proc.duracion} ${proc.unidad_de_duracion || ''}` : 'N/A'}
+                                                </p>
+                                            </div>
+                                            <div className="col-span-2 space-y-1 pt-1 border-t border-white/5">
+                                                <div className="flex items-center gap-1.5 text-[10px] text-zinc-500 uppercase font-bold tracking-wider">
+                                                    <span>Justificación</span>
+                                                </div>
+                                                <p className="text-[11px] text-zinc-400 leading-tight italic line-clamp-2">
+                                                    {proc.justificaci_n_modalidad_de || 'N/A'}
+                                                </p>
+                                            </div>
                                         </div>
 
                                         {/* Match Analysis Details */}

@@ -16,6 +16,11 @@ export interface SecopProcess {
     valor_total_adjudicacion?: string;
     estado_del_proceso?: string;
     fecha_de_ultima_publicaci?: string;
+    justificaci_n_modalidad_de?: string;
+    duracion?: string;
+    unidad_de_duracion?: string;
+    estado_del_procedimiento?: string;
+    estado_resumen?: string;
 }
 
 // SECOP II Datasets
