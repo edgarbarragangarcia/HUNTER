@@ -29,6 +29,7 @@ export interface MarketFilters {
     status?: 'active' | 'awarded' | 'all';
 }
 
+// Updated filtering logic - deploy trigger
 export async function searchSecopProcesses(query: string, limit: number = 300, filters?: MarketFilters): Promise<SecopProcess[]> {
     try {
         // Calculate date threshold (1 month ago for active, 6 months for awarded/history)
